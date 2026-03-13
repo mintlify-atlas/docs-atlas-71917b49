@@ -1,0 +1,83 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "OpenCC",
+  "projectDescription": "Open Chinese Convert - conversion between Traditional and Simplified Chinese with support for regional variants",
+  "theme": "mint",
+  "primaryColor": "#0bafd0",
+  "lightColor": "#d4ed4b",
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "SDK Reference",
+            "pages": [
+              "sdk/cpp",
+              "sdk/python",
+              "sdk/nodejs",
+              "sdk/cli"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "advanced/configurations",
+              "advanced/custom-dictionaries",
+              "advanced/building"
+            ]
+          },
+          {
+            "group": "Resources",
+            "pages": [
+              "resources/migration",
+              "resources/contributing",
+              "resources/changelog"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Character-level and phrase-level conversion between Traditional and Simplified Chinese",
+    "Regional variant support for Mainland China, Taiwan, Hong Kong, and Japanese Kanji",
+    "High-performance dictionary using MARISA trie data structure",
+    "Multi-language bindings for C, C++, Python, Node.js",
+    "Command-line tools for batch conversion and dictionary management",
+    "Customizable dictionaries and conversion configurations"
+  ],
+  "publicApiSurface": [
+    "SimpleConverter (C++)",
+    "opencc_open (C)",
+    "opencc_convert_utf8 (C)",
+    "OpenCC (Python)",
+    "OpenCC (Node.js)",
+    "opencc (CLI)",
+    "opencc_dict (CLI)",
+    "opencc_phrase_extract (CLI)",
+    "s2t.json",
+    "t2s.json",
+    "s2tw.json",
+    "tw2s.json",
+    "s2hk.json",
+    "hk2s.json",
+    "s2twp.json",
+    "tw2sp.json",
+    "t2tw.json",
+    "hk2t.json",
+    "t2hk.json",
+    "t2jp.json",
+    "jp2t.json",
+    "tw2t.json"
+  ]
+}
