@@ -1,97 +1,195 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: Open Chinese Convert
+description: High-performance conversion between Traditional and Simplified Chinese with regional variant support
 ---
 
-## Setting up
+<div style={{
+  background: 'linear-gradient(135deg, #0bafd0 0%, #d4ed4b 100%)',
+  padding: '60px 40px',
+  borderRadius: '0px',
+  marginBottom: '40px',
+  color: '#000000'
+}}>
+  <h1 style={{
+    fontSize: '36px',
+    fontWeight: '700',
+    fontFamily: 'Times New Roman, serif',
+    marginBottom: '20px',
+    color: '#000000'
+  }}>
+    Open Chinese Convert
+  </h1>
+  <p style={{
+    fontSize: '18px',
+    fontFamily: 'Times New Roman, serif',
+    maxWidth: '800px',
+    color: '#000000'
+  }}>
+    OpenCC is an open-source project for conversions between Traditional Chinese, Simplified Chinese, and Japanese Kanji (Shinjitai). It supports character-level and phrase-level conversion, character variant conversion, and regional idioms among Mainland China, Taiwan, and Hong Kong.
+  </p>
+</div>
 
-Get your documentation site up and running in minutes.
+## Quick Start
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+Get up and running with OpenCC in your preferred language:
 
-## Make it yours
+<CodeGroup>
 
-Design a docs site that looks great and empowers your users.
+```bash npm
+npm install opencc
+```
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+```bash pip
+pip install opencc
+```
+
+```bash brew
+brew install opencc
+```
+
+```bash apt
+apt install opencc
+```
+
+</CodeGroup>
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Character & Phrase Conversion" icon="language">
+    Converts both individual characters and multi-character phrases with context-aware accuracy
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Regional Variants" icon="globe">
+    Support for Mainland China, Taiwan, Hong Kong, and Japanese Kanji variants
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="High Performance" icon="gauge-high">
+    MARISA trie data structure enables fast conversion with minimal memory footprint
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Multi-Language SDKs" icon="code">
+    Native bindings for C, C++, Python, Node.js, and command-line tools
   </Card>
-</Columns>
+  <Card title="Customizable Dictionaries" icon="book">
+    Fully customizable conversion dictionaries and configuration files
+  </Card>
+  <Card title="Production Ready" icon="check-circle">
+    Used by major projects including ibus-pinyin, fcitx, and RIME IME
+  </Card>
+</CardGroup>
 
-## Create beautiful pages
+## Usage Example
 
-Everything you need to create world-class documentation.
+<Tabs>
+  <Tab title="Python">
+    ```python
+    import opencc
+    
+    # Initialize converter
+    converter = opencc.OpenCC('s2t.json')
+    
+    # Convert Simplified to Traditional
+    result = converter.convert('汉字')
+    print(result)  # 漢字
+    ```
+  </Tab>
+  <Tab title="Node.js">
+    ```javascript
+    const OpenCC = require('opencc');
+    
+    // Initialize converter
+    const converter = new OpenCC('s2t.json');
+    
+    // Convert Simplified to Traditional
+    converter.convertPromise("汉字").then(converted => {
+      console.log(converted);  // 漢字
+    });
+    ```
+  </Tab>
+  <Tab title="C++">
+    ```cpp
+    #include "opencc.h"
+    
+    int main() {
+      // Initialize converter
+      const opencc::SimpleConverter converter("s2t.json");
+      
+      // Convert Simplified to Traditional
+      std::string result = converter.Convert("汉字");
+      // result: 漢字
+      
+      return 0;
+    }
+    ```
+  </Tab>
+  <Tab title="CLI">
+    ```bash
+    # Convert file from Simplified to Traditional
+    opencc -i input.txt -o output.txt -c s2t
+    
+    # Convert stdin
+    echo "汉字" | opencc -c s2t
+    # Output: 漢字
+    ```
+  </Tab>
+</Tabs>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+## Conversion Configurations
 
-## Need inspiration?
+OpenCC provides 14 preset configuration files for different conversion scenarios:
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<AccordionGroup>
+  <Accordion title="Simplified ↔ Traditional">
+    - `s2t.json` - Simplified Chinese to Traditional Chinese
+    - `t2s.json` - Traditional Chinese to Simplified Chinese
+  </Accordion>
+  <Accordion title="Taiwan Variants">
+    - `s2tw.json` - Simplified to Traditional (Taiwan Standard)
+    - `tw2s.json` - Traditional (Taiwan Standard) to Simplified
+    - `s2twp.json` - Simplified to Traditional (Taiwan) with Taiwanese idioms
+    - `tw2sp.json` - Traditional (Taiwan) to Simplified with Mainland idioms
+  </Accordion>
+  <Accordion title="Hong Kong Variants">
+    - `s2hk.json` - Simplified to Traditional (Hong Kong variant)
+    - `hk2s.json` - Traditional (Hong Kong) to Simplified
+    - `hk2t.json` - Hong Kong variant to Traditional (OpenCC Standard)
+    - `t2hk.json` - Traditional to Hong Kong variant
+  </Accordion>
+  <Accordion title="Japanese Kanji">
+    - `t2jp.json` - Traditional Characters (Kyūjitai) to New Japanese Kanji (Shinjitai)
+    - `jp2t.json` - Japanese Kanji (Shinjitai) to Traditional Characters (Kyūjitai)
+  </Accordion>
+  <Accordion title="Standard Conversions">
+    - `t2tw.json` - Traditional (OpenCC Standard) to Taiwan Standard
+    - `tw2t.json` - Taiwan Standard to Traditional (OpenCC Standard)
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation Guide" icon="download" href="/installation">
+    Install OpenCC for your platform and language
+  </Card>
+  <Card title="Quick Start Tutorial" icon="rocket" href="/quickstart">
+    Build your first conversion application
+  </Card>
+  <Card title="SDK Reference" icon="code" href="/sdk/python">
+    Explore the complete API documentation
+  </Card>
+  <Card title="Custom Dictionaries" icon="book-open" href="/advanced/custom-dictionaries">
+    Create and manage custom conversion dictionaries
+  </Card>
+</CardGroup>
+
+## Trusted By
+
+OpenCC is used in production by major projects:
+
+- **RIME IME** - Cross-platform input method engine
+- **ibus-pinyin** - Intelligent Pinyin input method
+- **fcitx** - Flexible Input Method Framework
+- **GoldenDict** - Feature-rich dictionary lookup program
+- **China Biographical Database** - Harvard University research project
+
+<Note>
+OpenCC provides conversion between different Chinese character sets and regional variants. It is not a translation tool between Mandarin and Cantonese or other Chinese dialects.
+</Note>

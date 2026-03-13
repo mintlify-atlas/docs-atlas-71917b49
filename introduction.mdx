@@ -1,0 +1,181 @@
+---
+title: 'Introduction to OpenCC'
+description: 'Learn about OpenCC, the open-source library for conversion between Traditional and Simplified Chinese with regional variant support'
+---
+
+## What is OpenCC?
+
+Open Chinese Convert (OpenCC, 開放中文轉換) is an open-source project for conversions between Traditional Chinese, Simplified Chinese, and Japanese Kanji (Shinjitai). Unlike translation tools, OpenCC focuses on character and phrase-level conversion, supporting character variants and regional idioms across Mainland China, Taiwan, Hong Kong, and Japan.
+
+<Note>
+OpenCC is **not** a translation tool between Mandarin and Cantonese or other Chinese dialects. It converts writing systems while preserving the same language content.
+</Note>
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Precise Conversion" icon="wand-magic-sparkles">
+    Strictly distinguishes between "one-to-many simplified" and "one-to-many variants" to ensure accurate conversions
+  </Card>
+  <Card title="Variant Character Support" icon="language">
+    Full compatibility with variant characters, supporting dynamic replacement based on regional standards
+  </Card>
+  <Card title="Phrase-Level Intelligence" icon="brain">
+    Character-level and phrase-level conversion with careful attention to multi-character idioms
+  </Card>
+  <Card title="Regional Variants" icon="globe">
+    Supports Mainland China, Taiwan, and Hong Kong character variants and regional vocabulary (e.g., "鼠標" vs "滑鼠")
+  </Card>
+  <Card title="Modular Architecture" icon="cubes">
+    Complete separation of dictionary and library - freely modify, import, and extend dictionaries
+  </Card>
+  <Card title="Multi-Platform" icon="server">
+    Available for C/C++, Python, Node.js, with community ports for Swift, Java, Go, and WebAssembly
+  </Card>
+</CardGroup>
+
+## Use Cases
+
+### Content Localization
+Convert content between Simplified Chinese (大陆简体) and Traditional Chinese variants for Taiwan (臺灣正體) or Hong Kong (香港繁體), including regional vocabulary differences:
+
+```text
+Mainland: 计算机、软件、鼠标
+Taiwan:   電腦、軟體、滑鼠
+Hong Kong: 電腦、軟件、滑鼠
+```
+
+### Historical Text Processing
+Process historical Chinese texts that use traditional character forms or convert between Japanese Kanji forms (新字体/舊字體).
+
+### Input Method Engines
+Used by popular Chinese input methods like:
+- ibus-pinyin
+- fcitx
+- Rime Input Method Engine
+
+### Research and Academia
+Employed by academic projects like the China Biographical Database Project (CBDB) at Harvard for processing historical Chinese texts.
+
+## Architecture Overview
+
+### Conversion Chain
+
+OpenCC uses a flexible **conversion chain** architecture defined in JSON configuration files. Each conversion consists of:
+
+1. **Segmentation** - Text is segmented using Maximum Matching Segmentation (MMSeg) algorithm
+2. **Dictionary Matching** - Phrases and characters are matched against conversion dictionaries
+3. **Conversion Groups** - Multiple dictionaries can be grouped with priority ordering
+
+Example configuration structure (`s2t.json`):
+
+```json
+{
+  "name": "Simplified Chinese to Traditional Chinese",
+  "segmentation": {
+    "type": "mmseg",
+    "dict": {
+      "type": "ocd2",
+      "file": "STPhrases.ocd2"
+    }
+  },
+  "conversion_chain": [{
+    "dict": {
+      "type": "group",
+      "dicts": [
+        {"type": "ocd2", "file": "STPhrases.ocd2"},
+        {"type": "ocd2", "file": "STCharacters.ocd2"}
+      ]
+    }
+  }]
+}
+```
+
+### Dictionary System
+
+OpenCC uses two high-performance binary dictionary formats:
+
+- **`.ocd2`** (default) - Based on MARISA trie, smaller size and faster loading
+- **`.ocd`** (legacy) - Based on Darts double-array trie
+
+Dictionaries are compiled from human-readable `.txt` files:
+
+```text
+计算机    電腦 計算機
+软件      軟體 軟件
+鼠标      滑鼠 鼠標
+```
+
+### Third-Party Libraries
+
+OpenCC is built on robust open-source libraries:
+
+- **marisa-trie** - Efficient trie data structure for dictionary storage
+- **rapidjson** - Fast JSON parsing for configuration files
+- **darts-clone** - Alternative trie implementation
+- **Google Test** - Comprehensive test coverage
+
+<Info>
+All third-party libraries are statically linked by default for easy deployment.
+</Info>
+
+## Available Conversion Configurations
+
+OpenCC provides 14 pre-configured conversion schemes:
+
+| Configuration | Description |
+|--------------|-------------|
+| `s2t.json` | Simplified Chinese → Traditional Chinese |
+| `t2s.json` | Traditional Chinese → Simplified Chinese |
+| `s2tw.json` | Simplified Chinese → Taiwan Standard |
+| `tw2s.json` | Taiwan Standard → Simplified Chinese |
+| `s2twp.json` | Simplified Chinese → Taiwan Standard with Taiwanese idioms |
+| `tw2sp.json` | Taiwan Standard → Simplified Chinese with Mainland idioms |
+| `s2hk.json` | Simplified Chinese → Hong Kong Traditional |
+| `hk2s.json` | Hong Kong Traditional → Simplified Chinese |
+| `t2tw.json` | Traditional Chinese → Taiwan Standard |
+| `tw2t.json` | Taiwan Standard → Traditional Chinese |
+| `t2hk.json` | Traditional Chinese → Hong Kong Traditional |
+| `hk2t.json` | Hong Kong Traditional → Traditional Chinese |
+| `t2jp.json` | Traditional Chinese (Kyūjitai) → Japanese Kanji (Shinjitai) |
+| `jp2t.json` | Japanese Kanji (Shinjitai) → Traditional Chinese (Kyūjitai) |
+
+## Performance
+
+OpenCC is optimized for production use with excellent performance characteristics:
+
+- **Fast initialization** - Most configurations load in under 2ms
+- **High throughput** - Converts millions of characters per second
+- **Low memory footprint** - Efficient trie-based dictionary storage
+
+<Tip>
+For deployment scenarios, you can set the `OPENCC_DATA_DIR` environment variable to specify a custom path for configuration and dictionary files.
+</Tip>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install OpenCC on your platform
+  </Card>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get started with your first conversion
+  </Card>
+  <Card title="SDK Reference" icon="code" href="/sdk/python">
+    Explore the API documentation
+  </Card>
+  <Card title="Configuration Guide" icon="gear" href="/advanced/configurations">
+    Learn how to customize conversions
+  </Card>
+</CardGroup>
+
+## Community and Support
+
+- **GitHub Repository**: [BYVoid/OpenCC](https://github.com/BYVoid/OpenCC)
+- **Telegram Discussion**: [open_chinese_convert](https://t.me/open_chinese_convert)
+- **Online Demo**: [opencc.js.org](https://opencc.js.org/converter?config=s2t)
+- **Documentation**: [byvoid.github.io/OpenCC](https://byvoid.github.io/OpenCC/)
+
+## License
+
+OpenCC is released under the **Apache License 2.0**, making it suitable for both open-source and commercial projects.

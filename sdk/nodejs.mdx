@@ -1,0 +1,675 @@
+---
+title: Node.js API
+description: Complete reference for OpenCC Node.js bindings with TypeScript support
+---
+
+The OpenCC Node.js package provides both JavaScript and TypeScript APIs for Chinese text conversion with support for callbacks, Promises, and synchronous operations.
+
+## Installation
+
+```bash
+npm install opencc
+```
+
+The package uses `@mapbox/node-pre-gyp` to download pre-built binaries. If no binary is available for your platform, it will compile from source (requires C++ build tools).
+
+## Quick Start
+
+### JavaScript (ES6)
+
+```javascript
+const OpenCC = require('opencc');
+
+const converter = new OpenCC('s2t.json');
+
+// Synchronous
+const result = converter.convertSync('汉字');
+console.log(result);  // 漢字
+
+// Promise-based
+converter.convertPromise('汉字').then(result => {
+  console.log(result);
+});
+
+// Callback-based
+converter.convert('汉字', (err, converted) => {
+  if (!err) console.log(converted);
+});
+```
+
+### TypeScript
+
+```typescript
+import { OpenCC } from 'opencc';
+
+const converter = new OpenCC('s2t.json');
+
+// Async/await
+async function convert() {
+  const result: string = await converter.convertPromise('汉字');
+  console.log(result);  // 漢字
+}
+
+convert();
+```
+
+## OpenCC Class
+
+### Constructor
+
+<ParamField path="new OpenCC(config)" type="constructor">
+  Creates a new OpenCC converter instance.
+  
+  **Parameters:**
+  - `config` (string, optional) - Configuration filename. Default: `'s2t.json'`
+  
+  **Configuration Files:**
+  - `s2t.json` - Simplified to Traditional
+  - `t2s.json` - Traditional to Simplified
+  - `s2tw.json` - Simplified to Traditional (Taiwan)
+  - `tw2s.json` - Traditional (Taiwan) to Simplified
+  - `s2hk.json` - Simplified to Traditional (Hong Kong)
+  - `hk2s.json` - Traditional (Hong Kong) to Simplified
+  - `s2twp.json` - Simplified to Traditional (Taiwan with phrases)
+  - `tw2sp.json` - Traditional (Taiwan) to Simplified (with phrases)
+  - `t2tw.json` - Traditional to Traditional (Taiwan)
+  - `tw2t.json` - Traditional (Taiwan) to Traditional
+  - `t2hk.json` - Traditional to Traditional (Hong Kong)
+  - `hk2t.json` - Traditional (Hong Kong) to Traditional
+  - `t2jp.json` - Traditional to Japanese Kanji
+  - `jp2t.json` - Japanese Kanji to Traditional
+  
+  **Path Resolution:**
+  - Relative paths are resolved relative to the package installation directory
+  - Absolute paths (starting with `/` or containing `:` on Windows) are used as-is
+  - Custom configuration files can be specified with full paths
+  
+  **Example:**
+  ```javascript
+  // Default (s2t.json)
+  const converter = new OpenCC();
+  
+  // Specific configuration
+  const converter = new OpenCC('t2s.json');
+  
+  // Custom configuration file
+  const converter = new OpenCC('/path/to/custom.json');
+  ```
+  
+  **TypeScript:**
+  ```typescript
+  import { OpenCC } from 'opencc';
+  const converter: OpenCC = new OpenCC('s2t.json');
+  ```
+</ParamField>
+
+### Methods
+
+<ParamField path="convertSync(input)" type="string">
+  Synchronously converts text. This is the fastest method but blocks the event loop.
+  
+  **Parameters:**
+  - `input` (string) - Text to convert
+  
+  **Returns:** string - Converted text
+  
+  **Example:**
+  ```javascript
+  const result = converter.convertSync('开放中文转换');
+  console.log(result);  // 開放中文轉換
+  ```
+  
+  **TypeScript:**
+  ```typescript
+  const result: string = converter.convertSync('汉字');
+  ```
+  
+  <Note>
+    Use `convertSync()` for small texts or CLI applications. For large texts or server applications, prefer `convertPromise()` or `convert()` with callback.
+  </Note>
+</ParamField>
+
+<ParamField path="convert(input, callback)" type="void">
+  Asynchronously converts text using a callback. The conversion runs in a worker thread.
+  
+  **Parameters:**
+  - `input` (string) - Text to convert
+  - `callback` (function) - Callback function with signature `(err, result) => void`
+  
+  **Callback Parameters:**
+  - `err` (string | null) - Error message or null on success
+  - `result` (string) - Converted text
+  
+  **Example:**
+  ```javascript
+  converter.convert('汉字', (err, result) => {
+    if (err) {
+      console.error('Conversion failed:', err);
+      return;
+    }
+    console.log('Converted:', result);
+  });
+  ```
+  
+  **TypeScript:**
+  ```typescript
+  converter.convert('汉字', (err: string | null, result: string) => {
+    if (!err) {
+      console.log(result);
+    }
+  });
+  ```
+</ParamField>
+
+<ParamField path="convertPromise(input)" type="Promise<string>">
+  Asynchronously converts text and returns a Promise. Ideal for async/await and modern JavaScript.
+  
+  **Parameters:**
+  - `input` (string) - Text to convert
+  
+  **Returns:** `Promise<string>` - Promise that resolves to converted text
+  
+  **Example:**
+  ```javascript
+  // With .then()
+  converter.convertPromise('汉字')
+    .then(result => console.log(result))
+    .catch(err => console.error(err));
+  
+  // With async/await
+  async function convert() {
+    try {
+      const result = await converter.convertPromise('汉字');
+      console.log(result);
+    } catch (err) {
+      console.error('Conversion failed:', err);
+    }
+  }
+  ```
+  
+  **TypeScript:**
+  ```typescript
+  async function convert(): Promise<void> {
+    const result: string = await converter.convertPromise('汉字');
+    console.log(result);
+  }
+  ```
+  
+  <Note>
+    This is the recommended method for modern Node.js applications and web frameworks.
+  </Note>
+</ParamField>
+
+### Static Properties
+
+<ResponseField name="OpenCC.version" type="string">
+  OpenCC library version string.
+  
+  **Example:**
+  ```javascript
+  const OpenCC = require('opencc');
+  console.log('OpenCC version:', OpenCC.version);
+  ```
+  
+  **TypeScript:**
+  ```typescript
+  import { OpenCC } from 'opencc';
+  console.log(OpenCC.version);
+  ```
+</ResponseField>
+
+### Static Methods
+
+<ParamField path="OpenCC.generateDict(inputFileName, outputFileName, formatFrom, formatTo)" type="void">
+  Converts dictionary from one format to another. This is a low-level utility function.
+  
+  **Parameters:**
+  - `inputFileName` (string) - Input dictionary file path
+  - `outputFileName` (string) - Output dictionary file path
+  - `formatFrom` (string) - Input format: `'text'`, `'ocd2'`, or `'ocd'`
+  - `formatTo` (string) - Output format: `'text'`, `'ocd2'`, or `'ocd'`
+  
+  **Example:**
+  ```javascript
+  const OpenCC = require('opencc');
+  
+  // Convert text dictionary to binary format
+  OpenCC.generateDict(
+    'custom.txt',
+    'custom.ocd2',
+    'text',
+    'ocd2'
+  );
+  ```
+  
+  See [Command Line Tools](/sdk/cli) for the `opencc_dict` CLI tool.
+</ParamField>
+
+## Complete Examples
+
+### Basic Conversion (JavaScript)
+
+```javascript
+const OpenCC = require('opencc');
+
+// Create converters
+const s2t = new OpenCC('s2t.json');
+const t2s = new OpenCC('t2s.json');
+
+// Simplified to Traditional
+console.log(s2t.convertSync('简体中文'));  // 簡體中文
+console.log(s2t.convertSync('鼠标'));     // 鼠標
+
+// Traditional to Simplified
+console.log(t2s.convertSync('繁體中文'));  // 繁体中文
+console.log(t2s.convertSync('臺灣'));     // 台湾
+```
+
+### Async/Await (TypeScript)
+
+```typescript
+import { OpenCC } from 'opencc';
+
+class TextConverter {
+  private converter: OpenCC;
+  
+  constructor(config: string = 's2t.json') {
+    this.converter = new OpenCC(config);
+  }
+  
+  async convert(text: string): Promise<string> {
+    return this.converter.convertPromise(text);
+  }
+  
+  async convertBatch(texts: string[]): Promise<string[]> {
+    return Promise.all(
+      texts.map(text => this.converter.convertPromise(text))
+    );
+  }
+}
+
+// Usage
+async function main() {
+  const converter = new TextConverter('s2t.json');
+  
+  const result = await converter.convert('汉字');
+  console.log(result);  // 漢字
+  
+  const batch = await converter.convertBatch(['简体', '汉字', '中国']);
+  console.log(batch);   // ['簡體', '漢字', '中國']
+}
+
+main();
+```
+
+### Express.js Integration
+
+```javascript
+const express = require('express');
+const OpenCC = require('opencc');
+
+const app = express();
+app.use(express.json());
+
+// Create converters at startup (reuse for performance)
+const converters = {
+  's2t': new OpenCC('s2t.json'),
+  't2s': new OpenCC('t2s.json'),
+  's2tw': new OpenCC('s2tw.json'),
+  's2hk': new OpenCC('s2hk.json'),
+};
+
+app.post('/convert', async (req, res) => {
+  const { text, config = 's2t' } = req.body;
+  
+  if (!converters[config]) {
+    return res.status(400).json({ error: 'Invalid config' });
+  }
+  
+  try {
+    const result = await converters[config].convertPromise(text);
+    res.json({ result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.listen(3000, () => {
+  console.log('Server running on port 3000');
+  console.log('OpenCC version:', OpenCC.version);
+});
+```
+
+### File Conversion
+
+```javascript
+const fs = require('fs').promises;
+const OpenCC = require('opencc');
+
+async function convertFile(inputPath, outputPath, config = 's2t.json') {
+  const converter = new OpenCC(config);
+  
+  // Read input file
+  const content = await fs.readFile(inputPath, 'utf-8');
+  
+  // Convert
+  const converted = await converter.convertPromise(content);
+  
+  // Write output
+  await fs.writeFile(outputPath, converted, 'utf-8');
+  
+  console.log(`Converted ${inputPath} -> ${outputPath}`);
+}
+
+// Usage
+convertFile('input.txt', 'output.txt', 's2t.json')
+  .catch(err => console.error(err));
+```
+
+### Stream Processing
+
+```javascript
+const { Transform } = require('stream');
+const OpenCC = require('opencc');
+
+class OpenCCTransform extends Transform {
+  constructor(config = 's2t.json') {
+    super({ encoding: 'utf-8' });
+    this.converter = new OpenCC(config);
+  }
+  
+  _transform(chunk, encoding, callback) {
+    const text = chunk.toString();
+    this.converter.convert(text, (err, result) => {
+      if (err) {
+        callback(err);
+      } else {
+        callback(null, result);
+      }
+    });
+  }
+}
+
+// Usage
+const fs = require('fs');
+const transform = new OpenCCTransform('s2t.json');
+
+fs.createReadStream('input.txt', 'utf-8')
+  .pipe(transform)
+  .pipe(fs.createWriteStream('output.txt', 'utf-8'));
+```
+
+### CLI Application
+
+```javascript
+#!/usr/bin/env node
+
+const OpenCC = require('opencc');
+const readline = require('readline');
+
+// Parse arguments
+const args = process.argv.slice(2);
+const config = args[0] || 's2t.json';
+
+// Create converter
+const converter = new OpenCC(config);
+
+// Process stdin line by line
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+  terminal: false
+});
+
+rl.on('line', (line) => {
+  const result = converter.convertSync(line);
+  console.log(result);
+});
+```
+
+Usage:
+```bash
+# Make executable
+chmod +x convert.js
+
+# Convert stdin
+echo "汉字" | ./convert.js s2t.json
+
+# Convert file
+./convert.js s2t.json < input.txt > output.txt
+```
+
+### Next.js API Route
+
+```typescript
+// pages/api/convert.ts
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { OpenCC } from 'opencc';
+
+// Create converter at module level (reused across requests)
+const converters: Record<string, OpenCC> = {
+  's2t': new OpenCC('s2t.json'),
+  't2s': new OpenCC('t2s.json'),
+  's2tw': new OpenCC('s2tw.json'),
+};
+
+type Response = {
+  result?: string;
+  error?: string;
+};
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<Response>
+) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+  
+  const { text, config = 's2t' } = req.body;
+  
+  if (!text) {
+    return res.status(400).json({ error: 'Missing text parameter' });
+  }
+  
+  if (!converters[config]) {
+    return res.status(400).json({ error: 'Invalid config' });
+  }
+  
+  try {
+    const result = await converters[config].convertPromise(text);
+    res.status(200).json({ result });
+  } catch (error) {
+    res.status(500).json({ error: 'Conversion failed' });
+  }
+}
+```
+
+### React Hook
+
+```typescript
+import { useState, useEffect } from 'react';
+import { OpenCC } from 'opencc';
+
+let converter: OpenCC | null = null;
+
+export function useOpenCC(config: string = 's2t.json') {
+  const [isReady, setIsReady] = useState(false);
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      converter = new OpenCC(config);
+      setIsReady(true);
+    }
+  }, [config]);
+  
+  const convert = async (text: string): Promise<string> => {
+    if (!converter) throw new Error('Converter not initialized');
+    return converter.convertPromise(text);
+  };
+  
+  return { convert, isReady };
+}
+
+// Usage in component
+function MyComponent() {
+  const { convert, isReady } = useOpenCC('s2t.json');
+  const [result, setResult] = useState('');
+  
+  const handleConvert = async () => {
+    if (isReady) {
+      const converted = await convert('汉字');
+      setResult(converted);
+    }
+  };
+  
+  return (
+    <div>
+      <button onClick={handleConvert} disabled={!isReady}>
+        Convert
+      </button>
+      <p>{result}</p>
+    </div>
+  );
+}
+```
+
+## Performance Optimization
+
+### Reuse Converter Instances
+
+<Warning>
+  Creating a converter is expensive. Always reuse converter instances.
+</Warning>
+
+```javascript
+// BAD - Creates new converter for each request
+app.post('/convert', async (req, res) => {
+  const converter = new OpenCC('s2t.json');  // Slow!
+  const result = await converter.convertPromise(req.body.text);
+  res.json({ result });
+});
+
+// GOOD - Reuse converter
+const converter = new OpenCC('s2t.json');  // Create once
+
+app.post('/convert', async (req, res) => {
+  const result = await converter.convertPromise(req.body.text);
+  res.json({ result });
+});
+```
+
+### Singleton Pattern
+
+```typescript
+class OpenCCService {
+  private static converters: Map<string, OpenCC> = new Map();
+  
+  static getConverter(config: string): OpenCC {
+    if (!this.converters.has(config)) {
+      this.converters.set(config, new OpenCC(config));
+    }
+    return this.converters.get(config)!;
+  }
+  
+  static async convert(text: string, config: string = 's2t.json'): Promise<string> {
+    const converter = this.getConverter(config);
+    return converter.convertPromise(text);
+  }
+}
+
+// Usage
+const result = await OpenCCService.convert('汉字', 's2t.json');
+```
+
+### Batch Processing
+
+```javascript
+// Process multiple texts concurrently
+async function convertBatch(texts, config = 's2t.json') {
+  const converter = new OpenCC(config);
+  return Promise.all(
+    texts.map(text => converter.convertPromise(text))
+  );
+}
+
+const texts = ['文本1', '文本2', '文本3'];
+const results = await convertBatch(texts, 's2t.json');
+```
+
+## Error Handling
+
+```javascript
+const OpenCC = require('opencc');
+
+// Constructor errors
+try {
+  const converter = new OpenCC('invalid_config.json');
+} catch (err) {
+  console.error('Failed to create converter:', err.message);
+}
+
+// Conversion errors (Promise)
+converter.convertPromise('text')
+  .then(result => console.log(result))
+  .catch(err => console.error('Conversion failed:', err));
+
+// Conversion errors (async/await)
+try {
+  const result = await converter.convertPromise('text');
+} catch (err) {
+  console.error('Conversion failed:', err);
+}
+
+// Conversion errors (callback)
+converter.convert('text', (err, result) => {
+  if (err) {
+    console.error('Conversion failed:', err);
+    return;
+  }
+  console.log(result);
+});
+```
+
+## TypeScript Definitions
+
+The package includes full TypeScript definitions:
+
+```typescript
+declare class OpenCC {
+  constructor(config: string);
+  version(): string;
+  generateDict(
+    inputFileName: string,
+    outputFileName: string,
+    formatFrom: string,
+    formatTo: string
+  ): void;
+  convert(
+    input: string,
+    callback: (err: string | null, convertedText: string) => void
+  ): void;
+  convertSync(input: string): string;
+  convertPromise(input: string): Promise<string>;
+}
+
+export { OpenCC };
+```
+
+## Custom Configurations
+
+Use custom configuration files:
+
+```javascript
+const converter = new OpenCC('/path/to/custom.json');
+const result = await converter.convertPromise('text');
+```
+
+See [Configuration Guide](/advanced/configurations) for details on creating custom configurations.
+
+## See Also
+
+- [C/C++ API](/sdk/cpp) - C++ and C API reference
+- [Python API](/sdk/python) - Python bindings
+- [Command Line Tools](/sdk/cli) - CLI utilities
+- [Configuration](/advanced/configurations) - Configuration file format

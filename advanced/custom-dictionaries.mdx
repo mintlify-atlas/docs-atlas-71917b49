@@ -1,0 +1,662 @@
+---
+title: Custom Dictionaries
+description: Create, edit, and compile custom OpenCC dictionaries for specialized conversion needs
+---
+
+OpenCC's dictionary system is fully modular, allowing you to create custom dictionaries for domain-specific terminology, regional variants, or specialized conversion rules. This guide covers dictionary formats, creation workflows, and integration with OpenCC configurations.
+
+## Dictionary File Formats
+
+OpenCC supports three dictionary formats:
+
+| Format | Extension | Description | Use Case |
+|--------|-----------|-------------|----------|
+| Text | `.txt` | Human-readable tab-separated | Editing, development |
+| MARISA Trie | `.ocd2` | Optimized binary (default) | Production, fast loading |
+| Darts Trie | `.ocd` | Legacy binary format | Legacy compatibility |
+
+<Note>
+The `.ocd2` format (MARISA trie) is recommended for production. It's smaller and loads faster than the legacy `.ocd` format. For example, `STPhrases` reduces from 4.3MB to 924KB in `.ocd2` format.
+</Note>
+
+## Text Dictionary Format
+
+### Basic Structure
+
+Text dictionaries use a simple tab-separated format:
+
+```text
+# Open Chinese Convert (OpenCC) Dictionary
+# File: custom-dict.txt
+# Format: key[TAB]value(s) (multiple values separated by spaces)
+# License: Apache-2.0
+
+source_term	target_term
+key_phrase	value1 value2 value3
+multi_character	single_conversion
+```
+
+### Format Rules
+
+<Steps>
+  <Step title="One entry per line">
+    Each line represents a single dictionary entry mapping a source term to one or more target terms.
+  </Step>
+  
+  <Step title="Tab-separated fields">
+    Source and target terms are separated by a single tab character (`\t`).
+  </Step>
+  
+  <Step title="Multiple target values">
+    Multiple conversion candidates are separated by single spaces.
+  </Step>
+  
+  <Step title="Comments start with #">
+    Lines beginning with `#` are treated as comments and ignored.
+  </Step>
+  
+  <Step title="UTF-8 encoding">
+    All dictionary files must be UTF-8 encoded.
+  </Step>
+</Steps>
+
+### Real Dictionary Examples
+
+<CodeGroup>
+```text STCharacters.txt
+# Open Chinese Convert (OpenCC) Dictionary
+# File: STCharacters.txt
+# Format: key	value(s) (values separated by spaces)
+# Used in configs: s2hk.json, s2t.json, s2tw.json, s2twp.json
+
+㐷	傌
+㐹	㑶 㐹
+㐽	偑
+㑇	㑳
+㑈	倲
+㑔	㑯
+㑩	儸
+㓆	𠗣
+㓥	劏
+㓰	劃
+㔉	劚
+㖊	噚
+㖞	喎
+```
+
+```text STPhrases.txt
+# Open Chinese Convert (OpenCC) Dictionary
+# File: STPhrases.txt
+# Format: key	value(s) (values separated by spaces)
+# Used in configs: s2hk.json, s2t.json, s2tw.json, s2twp.json
+
+㓦划	㓦劃
+一丝不挂	一絲不掛
+一了心愿	一了心願
+一了百了	一了百了
+一了百当	一了百當
+一争两丑	一爭兩醜
+一伙	一夥
+一伙人	一夥人
+一伙头	一夥頭
+一偿宿愿	一償宿願
+一元复始	一元復始
+一克	一克
+一党	一黨
+```
+
+```text TWVariants.txt
+# Regional variant characters (Taiwan)
+# Maps characters to Taiwan-standard forms
+
+裏	裡
+着	著
+説	說
+```
+</CodeGroup>
+
+### Multiple Conversion Candidates
+
+When a source term can map to multiple targets, list all possibilities separated by spaces:
+
+```text
+干	乾 幹 干
+后	後 后
+丑	醜 丑
+```
+
+<Warning>
+**Important:** OpenCC uses the **first match** from longest prefix matching. When multiple values are provided, the conversion engine selects the most appropriate based on context and matching length. The order of values can affect conversion results in ambiguous cases.
+</Warning>
+
+## Creating Custom Dictionaries
+
+### Step 1: Create Text Dictionary
+
+Create a new `.txt` file with your custom mappings:
+
+```text custom-tech-terms.txt
+# Technology terminology conversions
+# Simplified Chinese to Traditional Chinese (Taiwan)
+
+人工智能	人工智慧
+机器学习	機器學習
+深度学习	深度學習
+神经网络	神經網路
+数据库	資料庫
+软件	軟體
+硬件	硬體
+计算机	電腦
+程序	程式
+算法	演算法
+操作系统	作業系統
+```
+
+### Step 2: Validate Format
+
+Ensure your dictionary follows formatting rules:
+
+<Accordion title="Validation checklist">
+  - [ ] UTF-8 encoding
+  - [ ] Tab characters between source and target (not spaces)
+  - [ ] No trailing whitespace
+  - [ ] No empty lines (or comment them out)
+  - [ ] Consistent ordering (phrases before characters if mixed)
+  - [ ] No duplicate source terms
+</Accordion>
+
+### Step 3: Test with Text Format
+
+Create a test configuration using the text dictionary:
+
+```json custom-tech-s2tw.json
+{
+  "name": "Tech Terms Simplified to Taiwan Traditional",
+  "segmentation": {
+    "type": "mmseg",
+    "dict": {
+      "type": "text",
+      "file": "custom-tech-terms.txt"
+    }
+  },
+  "conversion_chain": [{
+    "dict": {
+      "type": "group",
+      "dicts": [
+        {"type": "text", "file": "custom-tech-terms.txt"},
+        {"type": "ocd2", "file": "STCharacters.ocd2"}
+      ]
+    }
+  }]
+}
+```
+
+Test the configuration:
+
+```bash
+echo "人工智能和机器学习" | opencc -c custom-tech-s2tw.json
+# Output: 人工智慧和機器學習
+```
+
+## Compiling Binary Dictionaries
+
+Once your text dictionary is tested, compile it to `.ocd2` format for production use.
+
+### Using opencc_dict
+
+The `opencc_dict` command-line tool converts between dictionary formats:
+
+```bash
+opencc_dict --help
+```
+
+**Output:**
+```
+USAGE: opencc_dict -i <file> -o <file> -f <text|ocd2|ocd> -t <text|ocd2|ocd>
+
+Open Chinese Convert (OpenCC) Dictionary Tool
+
+Where:
+  -i <file>, --input <file>
+    (required) Path to input dictionary
+  -o <file>, --output <file>
+    (required) Path to output dictionary
+  -f <text|ocd2|ocd>, --from <text|ocd2|ocd>
+    (required) Input format
+  -t <text|ocd2|ocd>, --to <text|ocd2|ocd>
+    (required) Output format
+```
+
+### Conversion Examples
+
+<CodeGroup>
+```bash Text to OCD2 (Recommended)
+opencc_dict -i custom-tech-terms.txt \
+            -o custom-tech-terms.ocd2 \
+            -f text \
+            -t ocd2
+```
+
+```bash Text to OCD (Legacy)
+opencc_dict -i custom-tech-terms.txt \
+            -o custom-tech-terms.ocd \
+            -f text \
+            -t ocd
+```
+
+```bash OCD2 to Text (Decompile)
+opencc_dict -i STPhrases.ocd2 \
+            -o STPhrases-exported.txt \
+            -f ocd2 \
+            -t text
+```
+
+```bash OCD to OCD2 (Upgrade)
+opencc_dict -i legacy-dict.ocd \
+            -o modern-dict.ocd2 \
+            -f ocd \
+            -t ocd2
+```
+</CodeGroup>
+
+### Compilation Process
+
+When compiling to `.ocd2`, OpenCC:
+
+1. Parses the text dictionary entries
+2. Builds a MARISA trie structure for efficient prefix matching
+3. Serializes conversion values using the `SerializedValues` module
+4. Writes the binary file with header `OPENCC_MARISA_0.2.5`
+
+<Tip>
+Binary dictionaries load significantly faster than text dictionaries, especially for large datasets. Always use `.ocd2` in production environments.
+</Tip>
+
+## Binary Dictionary Internals
+
+### OCD2 Format (MARISA Trie)
+
+**File structure:**
+
+```
++------------------------+
+| Header                 | "OPENCC_MARISA_0.2.5"
++------------------------+
+| MARISA Trie Data       | Key storage and lookup
++------------------------+
+| SerializedValues Data  | Conversion value lists
++------------------------+
+```
+
+**Characteristics:**
+- **Header:** Magic string identifying format and version
+- **MARISA Trie:** Compact trie structure for key storage
+- **SerializedValues:** Efficient storage of all candidate value lists
+- **Size:** Typically 20-30% of text dictionary size
+- **Load speed:** Fast memory mapping
+
+**Implementation details** (from `src/MarisaDict.cpp`):
+
+```cpp
+// Pseudo-code structure
+class MarisaDict {
+  marisa::Trie trie_;           // Key lookup structure
+  SerializedValues values_;     // Value storage
+  
+  Optional<DictEntry> Match(const char* key) {
+    // Perform trie lookup
+    // Return serialized values for matched key
+  }
+};
+```
+
+### OCD Format (Darts Trie)
+
+**File structure:**
+
+```
++------------------------+
+| Header                 | "OPENCCDARTS1"
++------------------------+
+| Darts Array Data       | Double-array trie
++------------------------+
+| BinaryDict Data        | Key-value offsets
++------------------------+
+```
+
+<Warning>
+The `.ocd` format is legacy and requires compilation with `ENABLE_DARTS=ON`. Use `.ocd2` for new projects.
+</Warning>
+
+## Integrating Custom Dictionaries
+
+### Basic Integration
+
+Reference your compiled dictionary in a configuration file:
+
+```json
+{
+  "name": "Custom Conversion",
+  "conversion_chain": [{
+    "dict": {
+      "type": "ocd2",
+      "file": "custom-tech-terms.ocd2"
+    }
+  }]
+}
+```
+
+### Layered Dictionaries
+
+Combine custom dictionaries with built-in ones:
+
+```json
+{
+  "name": "Tech Terms with Fallback",
+  "conversion_chain": [{
+    "dict": {
+      "type": "group",
+      "dicts": [
+        {"type": "ocd2", "file": "custom-tech-terms.ocd2"},
+        {"type": "ocd2", "file": "STPhrases.ocd2"},
+        {"type": "ocd2", "file": "STCharacters.ocd2"}
+      ]
+    }
+  }]
+}
+```
+
+<Note>
+**Dictionary priority:** The first dictionary in a group that matches a term wins. Place your custom dictionary first to override default conversions.
+</Note>
+
+### Multi-Stage Custom Conversion
+
+```json
+{
+  "name": "Multi-stage Custom Conversion",
+  "segmentation": {
+    "type": "mmseg",
+    "dict": {"type": "ocd2", "file": "custom-phrases.ocd2"}
+  },
+  "conversion_chain": [
+    {
+      "dict": {
+        "type": "group",
+        "dicts": [
+          {"type": "ocd2", "file": "custom-phrases.ocd2"},
+          {"type": "ocd2", "file": "STPhrases.ocd2"},
+          {"type": "ocd2", "file": "STCharacters.ocd2"}
+        ]
+      }
+    },
+    {"dict": {"type": "ocd2", "file": "custom-variants.ocd2"}},
+    {"dict": {"type": "ocd2", "file": "TWVariants.ocd2"}}
+  ]
+}
+```
+
+## Advanced Dictionary Techniques
+
+### Domain-Specific Dictionaries
+
+Create separate dictionaries for different domains:
+
+<CodeGroup>
+```text medical-terms.txt
+# Medical terminology
+癌症	癌症
+肿瘤	腫瘤
+手术	手術
+药物	藥物
+诊断	診斷
+```
+
+```text legal-terms.txt
+# Legal terminology  
+合同	合約
+法律	法律
+诉讼	訴訟
+判决	判決
+证据	證據
+```
+
+```text finance-terms.txt
+# Financial terminology
+股票	股票
+债券	債券
+基金	基金
+投资	投資
+```
+</CodeGroup>
+
+Compile each domain dictionary separately and create domain-specific configurations.
+
+### Reverse Dictionary Generation
+
+Create bidirectional conversions:
+
+```bash
+# Create forward dictionary
+cat > forward.txt << EOF
+简体	繁體
+软件	軟體
+计算机	電腦
+EOF
+
+# Generate reverse dictionary (swap columns)
+awk -F'\t' '{print $2"\t"$1}' forward.txt > reverse.txt
+
+# Compile both
+opencc_dict -i forward.txt -o forward.ocd2 -f text -t ocd2
+opencc_dict -i reverse.txt -o reverse.ocd2 -f text -t ocd2
+```
+
+### Dictionary Merging
+
+Combine multiple text dictionaries:
+
+```bash
+# Merge dictionaries
+cat dict1.txt dict2.txt dict3.txt | \
+  grep -v '^#' | \
+  sort -u > merged.txt
+
+# Compile merged dictionary
+opencc_dict -i merged.txt -o merged.ocd2 -f text -t ocd2
+```
+
+<Warning>
+When merging dictionaries, ensure there are no conflicting entries with the same key but different values. The last occurrence will override previous ones.
+</Warning>
+
+## Dictionary Maintenance
+
+### Updating Dictionaries
+
+<Steps>
+  <Step title="Decompile to text">
+    Convert binary dictionary back to text format:
+    ```bash
+    opencc_dict -i existing.ocd2 -o existing.txt -f ocd2 -t text
+    ```
+  </Step>
+  
+  <Step title="Edit text file">
+    Make changes to the text dictionary using any text editor.
+  </Step>
+  
+  <Step title="Recompile to binary">
+    Convert updated text back to binary:
+    ```bash
+    opencc_dict -i existing.txt -o existing.ocd2 -f text -t ocd2
+    ```
+  </Step>
+  
+  <Step title="Test changes">
+    Verify the updated dictionary produces expected results.
+  </Step>
+</Steps>
+
+### Version Control
+
+**Best practices for version control:**
+
+- ✅ **DO** commit text dictionaries (`.txt`) to version control
+- ✅ **DO** commit configuration files (`.json`)
+- ❌ **DON'T** commit binary dictionaries (`.ocd2`, `.ocd`)
+- ✅ **DO** include build scripts to regenerate binaries
+- ✅ **DO** document dictionary structure and conventions
+
+**Example `.gitignore`:**
+
+```gitignore
+# Ignore compiled dictionary binaries
+*.ocd
+*.ocd2
+
+# Keep text dictionaries
+!*.txt
+```
+
+**Example build script:**
+
+```bash build-dictionaries.sh
+#!/bin/bash
+# Compile all text dictionaries to ocd2 format
+
+for txt_file in *.txt; do
+  base_name="${txt_file%.txt}"
+  echo "Compiling $txt_file -> ${base_name}.ocd2"
+  opencc_dict -i "$txt_file" \
+              -o "${base_name}.ocd2" \
+              -f text \
+              -t ocd2
+done
+
+echo "Dictionary compilation complete"
+```
+
+## Dictionary Testing
+
+### Unit Testing
+
+Create test cases for dictionary entries:
+
+```python test_custom_dict.py
+import opencc
+import unittest
+
+class TestCustomDictionary(unittest.TestCase):
+    def setUp(self):
+        self.converter = opencc.OpenCC('custom-tech-s2tw.json')
+    
+    def test_tech_terms(self):
+        test_cases = [
+            ('人工智能', '人工智慧'),
+            ('机器学习', '機器學習'),
+            ('深度学习', '深度學習'),
+            ('神经网络', '神經網路'),
+        ]
+        
+        for source, expected in test_cases:
+            with self.subTest(source=source):
+                result = self.converter.convert(source)
+                self.assertEqual(result, expected)
+
+if __name__ == '__main__':
+    unittest.main()
+```
+
+### Integration Testing
+
+```bash
+#!/bin/bash
+# Test dictionary with real-world examples
+
+echo "Testing custom dictionary..."
+
+echo "人工智能和机器学习" | opencc -c custom-tech-s2tw.json
+# Expected: 人工智慧和機器學習
+
+echo "深度学习神经网络" | opencc -c custom-tech-s2tw.json
+# Expected: 深度學習神經網路
+
+echo "数据库和操作系统" | opencc -c custom-tech-s2tw.json
+# Expected: 資料庫和作業系統
+```
+
+## Performance Considerations
+
+### Dictionary Size vs. Performance
+
+| Dictionary Size | Text Format | OCD2 Format | Load Time | Lookup Speed |
+|----------------|-------------|-------------|-----------|---------------|
+| Small (&lt;1K entries) | Fast | Faster | &lt;1ms | Fast |
+| Medium (1K-100K) | Slow | Fast | &lt;10ms | Fast |
+| Large (&gt;100K entries) | Very slow | Fast | &lt;100ms | Fast |
+
+### Optimization Tips
+
+<AccordionGroup>
+  <Accordion title="Split large dictionaries">
+    Instead of one massive dictionary, create smaller domain-specific dictionaries and use dictionary groups:
+    
+    ```json
+    "dicts": [
+      {"type": "ocd2", "file": "common-terms.ocd2"},
+      {"type": "ocd2", "file": "tech-terms.ocd2"},
+      {"type": "ocd2", "file": "rare-terms.ocd2"}
+    ]
+    ```
+  </Accordion>
+
+  <Accordion title="Always use binary format in production">
+    Text dictionaries are convenient for development but significantly slower for large datasets. Always compile to `.ocd2` for production.
+  </Accordion>
+
+  <Accordion title="Order entries by frequency">
+    In dictionary groups, place frequently-used dictionaries first to reduce lookup time.
+  </Accordion>
+
+  <Accordion title="Remove redundant entries">
+    If a character conversion is already handled by a character dictionary, you don't need to duplicate it in a phrase dictionary (unless context-specific).
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+### Dictionary Compilation Errors
+
+**Error:** `Failed to read dictionary file`
+
+**Solutions:**
+- Verify file encoding is UTF-8
+- Check for binary characters or invalid UTF-8 sequences
+- Ensure tab characters (not spaces) separate fields
+
+### Incorrect Conversions
+
+**Symptoms:** Terms not converting or converting incorrectly
+
+**Solutions:**
+- Verify dictionary order in configuration (custom first)
+- Check for conflicting entries in multiple dictionaries
+- Ensure phrases are in segmentation dictionary
+- Test with text dictionary first, then compile to binary
+
+### Missing Conversions
+
+**Symptoms:** Some terms pass through unconverted
+
+**Solutions:**
+- Add missing terms to your custom dictionary
+- Verify terms are in segmentation dictionary for multi-character phrases
+- Check that dictionary file path is correct in configuration
+- Ensure dictionary is being loaded (check logs)
+
+## See Also
+
+- [Configuration Files](/advanced/configurations) - Integrating dictionaries into configurations
+- [Building from Source](/advanced/building) - Compiling OpenCC with custom dictionaries
+- [opencc_dict Tool](/sdk/cli) - Dictionary conversion command reference

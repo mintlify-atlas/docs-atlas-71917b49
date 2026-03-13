@@ -1,0 +1,617 @@
+---
+title: 'Changelog'
+description: 'Complete version history and release notes for OpenCC'
+---
+
+<Info>
+View the complete history of OpenCC releases, from the latest features to the initial release.
+</Info>
+
+## Latest Releases
+
+### Version 1.2.0
+
+**Released:** January 22, 2026
+
+<AccordionGroup>
+<Accordion title="Features">
+
+**Dictionary Updates:**
+- Integrated and revised STPhrases/TWPhrases dictionaries
+- Added medical terminology entries
+- Added Nvidia brand name translations
+- Added Japanese rabbit character variants (兔/兎)
+- Comprehensive test coverage improvements
+
+**Dictionary Format:**
+- Introduced comment syntax for `.txt` dictionaries
+- New sorting rules for dictionary files
+- `TWPhrasesRev` now maintained directly in repository with consistency tests
+
+**Test Infrastructure:**
+- Migrated test cases to JSON format for better maintainability
+- Improved test validation and error reporting
+
+</Accordion>
+
+<Accordion title="Bug Fixes">
+
+- Fixed `tw2sp`/`s2twp` configuration errors causing incorrect conversions
+- Fixed UTF-8 truncation boundary overflow read issue
+- Corrected multiple dictionary entries and phrase conversions
+
+</Accordion>
+
+<Accordion title="Build & Dependencies">
+
+- Upgraded Bazel to 8.5.1
+- Upgraded to C++17 with marisa-trie 0.3.0
+- Updated `nan` dependency for Node.js compatibility
+- Fixed GCC 15 and C++17 deprecation warnings
+
+</Accordion>
+
+<Accordion title="Platform Support">
+
+- Added macOS 14 support
+- Removed Python 2 remnants
+- Registered hermetic Python 3.12 toolchain
+- Updated Node.js test matrix, removed Node 18 and Windows x86
+- Improved CI artifact uploads and task cancellation
+
+</Accordion>
+
+<Accordion title="Documentation">
+
+- Added Traditional Chinese contributing guide (CONTRIBUTING.md)
+- Updated README with Bazel testing instructions
+- Added contributor acknowledgments
+- Listed opencc-wasm in third-party implementations
+- Fixed PyPI release scripts
+
+</Accordion>
+</AccordionGroup>
+
+**GitHub:** [View on GitHub](https://github.com/BYVoid/OpenCC/releases/tag/ver.1.2.0)
+
+---
+
+### Version 1.1.9
+
+**Released:** August 3, 2024
+
+<AccordionGroup>
+<Accordion title="Compatibility">
+
+- Restored single-parameter `Config::NewFromFile` interface for ABI compatibility
+- Maintained backward compatibility with existing applications
+
+</Accordion>
+
+<Accordion title="Features">
+
+- Added Bazel Python library and tests
+- Migrated build and scripts to Python 3
+- Added installation documentation
+
+</Accordion>
+
+<Accordion title="Build System">
+
+- Fixed `rapidjson` patch issues
+- Corrected `.npmignore` configuration
+- Adjusted Bazel dependency configuration (marked `googletest` as `dev_dependency`)
+
+</Accordion>
+</AccordionGroup>
+
+<Note>
+This is a maintenance release with no significant dictionary changes.
+</Note>
+
+---
+
+### Version 1.1.8
+
+**Released:** July 27, 2024
+
+<AccordionGroup>
+<Accordion title="Node.js Support">
+
+- Fixed compilation issues with newer Node.js versions
+- Resolved issues #782 and #798
+
+</Accordion>
+
+<Accordion title="Build System">
+
+- Introduced Bazel build system with CI integration
+- Added GitHub MSVC CI pipeline
+- Updated build documentation and workflows
+
+</Accordion>
+
+<Accordion title="Command Line">
+
+- Added `--path` parameter to `opencc` command for custom dictionary and configuration paths
+- Improved flexibility in dictionary location management
+
+</Accordion>
+
+<Accordion title="Dependencies">
+
+- Updated googletest to 1.15
+- Updated pybind11 to 2.13.1
+- Updated tclap to 1.2.5
+
+</Accordion>
+
+<Accordion title="Dictionary Corrections">
+
+Numerous conversion fixes through multiple pull requests:
+- PRs #609, #698, #707, #760, #779, #786, #792, #806, #808, #810
+- PRs #825, #826, #837, #864, #865, #870, #877, #878
+
+</Accordion>
+</AccordionGroup>
+
+---
+
+### Version 1.1.7
+
+**Released:** October 15, 2023
+
+- Added Python package rebuild on commit to validate package generation
+- Added support for Python 3.12 and Node.js 20
+- Removed builds for Python 3.7 and Node.js 16
+- Added mingw-w64 CI support
+- Added CMake config modules support
+- Various bug fixes and improvements
+
+---
+
+### Version 1.1.6
+
+**Released:** December 8, 2022
+
+- Fixed Python 3.11 macOS build issues
+- Bumped gtest and benchmark to work with latest GitHub runners
+- Improved CI stability
+
+---
+
+## Major Releases
+
+### Version 1.1.5
+
+**Released:** December 3, 2022
+
+<AccordionGroup>
+<Accordion title="Platform Support">
+
+- **Apple Silicon Support**: Official support for Apple M1/M2 chips
+- Added build tags for Apple Silicon architecture
+- Python 3.11 support added
+
+</Accordion>
+
+<Accordion title="Build Improvements">
+
+- Automatic SO file naming
+- Improved build scripts for macOS ARM64
+- Enhanced cross-platform compatibility
+
+</Accordion>
+</AccordionGroup>
+
+---
+
+### Version 1.1.4
+
+**Released:** June 4, 2022
+
+- Added Python 3.10 support
+- Removed builds for Python 2.7, 3.5, 3.6
+- Removed Node.js 10 support
+- Cleaned up legacy code and dependencies
+
+---
+
+### Version 1.1.3
+
+**Released:** September 3, 2021
+
+- Fixed header file standalone usage issues
+- Fixed system pybind11 integration
+- Added Node.js 16 support
+- Added Python 3.9 support
+- Corrected various conversion errors
+
+---
+
+### Version 1.1.2
+
+**Released:** March 2, 2021
+
+<Warning>
+This version includes major dictionary updates and performance improvements.
+</Warning>
+
+<AccordionGroup>
+<Accordion title="Features">
+
+- **Hong Kong Traditional Chinese**: Added comprehensive HK variant conversion support
+- Adjusted Taiwan standard to avoid over-conversion
+- Significantly revised Simplified variant characters based on *Table of General Standard Chinese Characters*
+
+</Accordion>
+
+<Accordion title="Performance">
+
+- Fixed severe performance degradation introduced in version 1.1.0
+- Optimized dictionary loading and conversion speed
+- Improved memory usage efficiency
+
+</Accordion>
+
+<Accordion title="Build System">
+
+- Fixed compilation compatibility issues
+- Added parallel compilation support
+- Improved cross-platform build reliability
+
+</Accordion>
+</AccordionGroup>
+
+---
+
+### Version 1.1.1
+
+**Released:** May 22, 2020
+
+- **Python Package**: Official [PyPI distribution](https://pypi.org/project/OpenCC/)
+- **TypeScript**: Added TypeScript type annotations
+- Updated dynamic library `SOVERSION` to 1.1 due to C++ API changes
+- Improved Windows MSVC compatibility
+- Simplified header structure for faster compilation
+- Removed unnecessary `using` declarations
+- Fixed some Hong Kong standard characters
+
+---
+
+### Version 1.1.0
+
+**Released:** May 10, 2020
+
+<Warning>
+**Major Release**: Introduces new `.ocd2` dictionary format with significant file size reductions.
+</Warning>
+
+<AccordionGroup>
+<Accordion title="Dictionary Format">
+
+**New `.ocd2` Format:**
+- Based on Marisa Trie 0.2.5
+- Massive size reduction: `STPhrases.ocd` (4.3MB) → `STPhrases.ocd2` (924KB)
+- Faster loading times
+- Improved memory efficiency
+
+</Accordion>
+
+<Accordion title="Dependencies">
+
+- Upgraded rapidjson to 1.1.0
+- Upgraded tclap to 1.2.2
+- Upgraded googletest to 1.11.0
+
+</Accordion>
+
+<Accordion title="Dictionary Updates">
+
+- Changed default conversion for 涌/湧
+- Corrected multiple phrase conversions
+- Improved accuracy across all conversion types
+
+</Accordion>
+
+<Accordion title="Distribution">
+
+- Provided Windows precompiled binaries (AppVeyor)
+- Added benchmark results for performance comparison
+
+</Accordion>
+</AccordionGroup>
+
+---
+
+### Version 1.0.6
+
+**Released:** April 13, 2020
+
+- **Japanese Kanji Support**: Official support for Japanese Shinjitai ↔ Kyūjitai conversion
+- Upgraded Node.js dependencies for better compatibility
+- Fixed numerous cross-platform compilation issues
+- Corrected many conversion errors
+
+---
+
+### Version 1.0.5
+
+**Released:** February 6, 2017
+
+- Fixed CMake and Visual Studio issues on Windows
+- Fixed FNV Hash 32-bit compilation warnings
+- Added Taiwan common vocabulary conversions
+- Added variant character conversions
+- Improved Node.js module compilation speed
+- Added dictionary conversion and Promise interfaces for Node.js
+
+---
+
+### Version 1.0.4
+
+**Released:** April 1, 2016
+
+- Made build scripts compatible with Python 3
+- Fixed Visual C++ 2015 compilation issues
+- Enhanced Taiwan and Hong Kong regional vocabulary
+- Updated `nan` for Node.js extension compatibility
+
+---
+
+### Version 1.0.3
+
+**Released:** July 22, 2015
+
+<AccordionGroup>
+<Accordion title="Features">
+
+- Added chemical element Taiwan translations
+- Added 100+ missing Simplified-Traditional character pairs
+- Enhanced Hong Kong standard characters
+- Used `nan` for Node.js extension compatibility
+
+</Accordion>
+
+<Accordion title="Command Line">
+
+- Added in-place conversion support
+- Improved command-line interface
+
+</Accordion>
+
+<Accordion title="Development">
+
+- Migrated test framework to Google Test
+- Fixed Visual C++ compilation issues
+- Implemented dictionary-free word extraction and segmentation algorithms
+- Optimized conversion performance
+
+</Accordion>
+</AccordionGroup>
+
+---
+
+## Version 1.0 Series
+
+### Version 1.0.2
+
+**Released:** November 8, 2014
+
+- Fixed C API compilation errors
+- Fixed default Simplified-Traditional conversion file name error
+- Added `Values()` method to `DictEntry`
+
+---
+
+### Version 1.0.1
+
+**Released:** October 18, 2014
+
+<Warning>
+**Major Rewrite**: Complete rewrite using C++11.
+</Warning>
+
+- Completely rewrote OpenCC using C++11
+- Fixed numerous conversion errors
+- Added Hong Kong Traditional Chinese conversion
+- Improved phrase-level conversion accuracy
+- Enhanced character variant handling
+
+---
+
+## Legacy Releases (0.x)
+
+### Version 0.4.3
+
+**Released:** May 17, 2013
+
+- Added `opencc_convert_utf8_free` interface
+- Fixed Node.js plugin memory leak
+- Fixed Windows current directory retrieval issue
+
+---
+
+### Version 0.4.2
+
+**Released:** April 14, 2013
+
+- Fixed 阪/薰 Traditional-Simplified conversion
+- Added four missing Simplified-Traditional pairs
+- Added API documentation generated by Doxygen
+- Refactored substantial code portions
+
+---
+
+### Version 0.4.1
+
+**Released:** March 21, 2013
+
+- Fixed Node.js 0.10 compatibility
+- Added missing character conversions from Unihan database
+
+---
+
+### Version 0.4.0
+
+**Released:** March 2, 2013
+
+- Fixed 雕/谥/峯 conversions
+- Added hundreds of Taiwan technology terms
+- Added gyp build system
+- Added Node.js interface
+- Fixed UTF-8 encoding issues
+- Automatically skip UTF-8 BOM
+- Fixed relative path issues for configuration files
+
+---
+
+### Version 0.3.0
+
+**Released:** December 2, 2011
+
+- Added regional variant and idiom conversion for Mainland China and Taiwan
+- Fixed buffer copy bug when conversion chain has odd length
+- Fixed UTF-8 conversion errors on Big Endian platforms
+- Added numerous character variant corrections
+
+---
+
+### Version 0.2.0
+
+**Released:** December 23, 2010
+
+- Removed iconv dependency from libopencc
+- Added UTF-8 encoding error messages
+- Refactored Python wrapper
+- Fixed UTF-8 truncation when line exceeds buffer
+- Switched from Autotools to CMake
+- Improved cross-platform build support
+
+---
+
+### Version 0.1.2
+
+**Released:** September 16, 2010
+
+- Added "segmentation only" and "show multiple candidates" conversion interfaces
+- Improved dictionary file structure
+- Fixed buffer allocation bugs
+- Enhanced command-line tool help
+
+---
+
+### Version 0.1.1
+
+**Released:** August 10, 2010
+
+- Added mixed Simplified-Traditional to pure conversion
+- Added multi-dictionary/dictionary group support
+- Fixed Big Endian platform compatibility
+- Fixed Apple platform iconv dependency
+- Separated dictionary into character and phrase dictionaries
+- Added compile-time tests
+
+---
+
+### Version 0.1.0
+
+**Released:** July 28, 2010
+
+- Fixed filename buffer overflow bug
+- Updated libopencc version to 1.0.0
+- Separated Taiwan-specific conversions
+- Updated default variant mappings
+- Added numerous character conversions
+- Updated interface documentation
+
+---
+
+### Version 0.0.5
+
+**Released:** July 21, 2010
+
+- Fixed `wchar_t` compatibility by using `ucs4`
+- Added Windows port branch
+- Fixed filename buffer allocation
+- Added character conversions: 囉/溼/廕/彷/徵
+
+---
+
+### Version 0.0.4
+
+**Released:** July 16, 2010
+
+- Added conversions: 卹/牴/皁/羶/薹
+- Simplified dictionary by removing unnecessary number words
+- Fixed shortest path segmentation backward matching
+- Fixed dictionary loading compatibility (fallback to malloc when mmap fails)
+- Fixed C++ interface 64-bit compilation
+
+---
+
+### Version 0.0.3
+
+**Released:** June 22, 2010
+
+- Added Traditional to Simplified conversion
+- Added Chinese translations for messages using GNU Gettext
+- Added dictionary configuration file support
+- Fixed compatibility bugs
+
+---
+
+### Version 0.0.2
+
+**Released:** June 19, 2010
+
+- Separated dictionary from code
+- Added plain text dictionary support
+- Added `opencc_dict` tool for converting dictionaries to Datrie format
+- Provided UTF-8 text direct conversion interface
+
+---
+
+### Version 0.0.1
+
+**Released:** June 11, 2010
+
+<Note>
+**Initial Release** of OpenCC with basic Simplified ↔ Traditional conversion support.
+</Note>
+
+---
+
+## Release Links
+
+<CardGroup cols={2}>
+<Card title="GitHub Releases" icon="github" href="https://github.com/BYVoid/OpenCC/releases">
+  View all releases on GitHub
+</Card>
+
+<Card title="PyPI Releases" icon="python" href="https://pypi.org/project/OpenCC/#history">
+  Python package release history
+</Card>
+
+<Card title="npm Releases" icon="npm" href="https://www.npmjs.com/package/opencc?activeTab=versions">
+  Node.js package versions
+</Card>
+
+<Card title="Bazel Registry" icon="cube" href="https://registry.bazel.build/modules/opencc">
+  Bazel module versions
+</Card>
+</CardGroup>
+
+## Version Support
+
+| Version | Release Date | Support Status |
+|---------|--------------|----------------|
+| 1.2.x | 2026-01 | **Active Development** |
+| 1.1.x | 2020-05 - 2024-08 | Maintenance |
+| 1.0.x | 2014-10 - 2020-04 | Legacy |
+| 0.4.x | 2013-03 - 2013-05 | Unsupported |
+| 0.3.x and older | 2010-06 - 2011-12 | Unsupported |
+
+<Info>
+For migration guidance between versions, see the [Migration Guide](/resources/migration).
+</Info>

@@ -1,0 +1,537 @@
+---
+title: 'Contributing Guide'
+description: 'Learn how to contribute dictionaries, test cases, and code to OpenCC'
+---
+
+<Info>
+Thank you for contributing to OpenCC! This guide explains how to contribute dictionary entries, write test cases, and ensure code quality.
+</Info>
+
+## Quick Start
+
+Contributions to OpenCC typically involve:
+
+1. Adding or correcting dictionary entries
+2. Writing test cases to validate conversions
+3. Improving code and documentation
+4. Reporting bugs and suggesting features
+
+<Warning>
+Always write test cases **before** modifying dictionaries. This ensures your changes work correctly and prevents regressions.
+</Warning>
+
+## Contributing Dictionary Entries
+
+### Choosing the Right Dictionary File
+
+Dictionaries are located in `data/dictionary/`. Choose the appropriate file based on conversion type:
+
+<AccordionGroup>
+<Accordion title="Simplified ↔ Traditional">
+
+- `STCharacters.txt` - Simplified to Traditional (characters)
+- `STPhrases.txt` - Simplified to Traditional (phrases)
+- `TSCharacters.txt` - Traditional to Simplified (characters)
+- `TSPhrases.txt` - Traditional to Simplified (phrases)
+
+</Accordion>
+
+<Accordion title="Taiwan Standard">
+
+- `TWVariants.txt` - Taiwan variant characters
+- `TWPhrases.txt` - Taiwan standard phrases
+- `TWPhrasesRev.txt` - Taiwan phrases reverse (maintained automatically)
+
+</Accordion>
+
+<Accordion title="Hong Kong Traditional">
+
+- `HKVariants.txt` - Hong Kong variant characters
+- `HKVariantsRevPhrases.txt` - Hong Kong variant reverse phrases
+
+</Accordion>
+
+<Accordion title="Japanese Kanji">
+
+- `JPShinjitaiCharacters.txt` - Japanese new characters (Shinjitai)
+- `JPShinjitaiPhrases.txt` - Japanese new character phrases
+- `JPVariants.txt` - Japanese variants
+
+</Accordion>
+</AccordionGroup>
+
+### Dictionary Format
+
+<Warning>
+Dictionaries **must use Tab characters** (`\t`) to separate source and target terms. **Do not use spaces.**
+</Warning>
+
+**Format:** `source<TAB>target`
+
+**Example:**
+```
+虚伪叹息	虛偽嘆息
+潮湿灶台	潮濕灶台
+赞叹	讚歎
+```
+
+**Multiple conversions** (space-separated):
+```
+一出	一齣 一出
+```
+
+### Editing Dictionary Files
+
+<Steps>
+<Step title="Open the dictionary file">
+
+Use a text editor that preserves Tab characters:
+
+```bash
+# Example: Edit Simplified to Traditional phrases
+vim data/dictionary/STPhrases.txt
+
+# Or use your preferred editor
+code data/dictionary/STPhrases.txt
+```
+
+</Step>
+
+<Step title="Add your entries">
+
+Add one entry per line, using Tab to separate source from target:
+
+- Use **Tab character** (`\t`) as separator
+- One entry per line
+- UTF-8 encoding required
+
+</Step>
+
+<Step title="Sort the dictionary">
+
+<Warning>
+Dictionaries **must be sorted** alphabetically, or tests will fail.
+</Warning>
+
+Use the provided sorting scripts:
+
+```bash
+# Sort a single file
+python3 data/scripts/sort.py data/dictionary/STPhrases.txt
+
+# Sort with output to different file
+python3 data/scripts/sort.py data/dictionary/STPhrases.txt data/dictionary/STPhrases_sorted.txt
+
+# Sort all dictionary files
+python3 data/scripts/sort_all.py data/dictionary
+```
+
+</Step>
+</Steps>
+
+### Dictionary Sorting Validation
+
+Sorting is automatically validated during testing. If your dictionary is not sorted:
+
+```
+[ FAILED ] DictionaryTest/STPhrases.UniqueSortedTest
+STPhrases is not sorted.
+```
+
+**Solution:** Run the sorting script before committing.
+
+## Writing Test Cases
+
+### Test-Driven Development Workflow
+
+<Steps>
+<Step title="Write the test first">
+
+Before modifying dictionaries, add a test case to `test/testcases/testcases.json`:
+
+```json
+{
+  "cases": [
+    {
+      "id": "fix_software_conversion",
+      "input": "這個軟體裡有一套軟體動物的資料庫",
+      "expected": {
+        "tw2sp": "这个软件里有一套软体动物的数据库"
+      }
+    }
+  ]
+}
+```
+
+</Step>
+
+<Step title="Verify the test fails">
+
+Run tests to confirm the issue exists:
+
+```bash
+bazel test //test/...
+```
+
+The test should fail, showing the current (incorrect) conversion.
+
+</Step>
+
+<Step title="Update the dictionary">
+
+Add or modify dictionary entries to fix the issue:
+
+```bash
+# Edit the appropriate dictionary
+vim data/dictionary/TWPhrases.txt
+
+# Sort the dictionary
+python3 data/scripts/sort.py data/dictionary/TWPhrases.txt
+```
+
+</Step>
+
+<Step title="Verify the test passes">
+
+Run tests again to confirm your fix works:
+
+```bash
+bazel test --test_output=all //test/...
+```
+
+All tests should now pass.
+
+</Step>
+</Steps>
+
+### Test Case Format
+
+Test cases are defined in `test/testcases/testcases.json`:
+
+```json
+{
+  "cases": [
+    {
+      "id": "unique_test_identifier",
+      "input": "input text to convert",
+      "expected": {
+        "s2t": "expected simplified to traditional output",
+        "s2tw": "expected simplified to taiwan output",
+        "tw2s": "expected taiwan to simplified output"
+      }
+    }
+  ]
+}
+```
+
+**Fields:**
+- `id`: Unique test case identifier (e.g., `case_050`, `fix_issue_1234`)
+- `input`: Text to convert
+- `expected`: Expected output for each configuration (include only configurations you're testing)
+
+### Available Conversion Configurations
+
+<AccordionGroup>
+<Accordion title="Simplified ↔ Traditional">
+
+- `s2t` - Simplified to Traditional (OpenCC standard)
+- `t2s` - Traditional to Simplified (OpenCC standard)
+
+</Accordion>
+
+<Accordion title="Regional Variants">
+
+- `s2tw` - Simplified to Taiwan Traditional
+- `s2twp` - Simplified to Taiwan Traditional (with idioms)
+- `s2hk` - Simplified to Hong Kong Traditional
+- `tw2s` - Taiwan Traditional to Simplified
+- `tw2sp` - Taiwan Traditional to Simplified (with idioms)
+- `hk2s` - Hong Kong Traditional to Simplified
+- `hk2t` - Hong Kong Traditional to OpenCC Traditional
+- `t2tw` - OpenCC Traditional to Taiwan Traditional
+- `t2hk` - OpenCC Traditional to Hong Kong Traditional
+- `tw2t` - Taiwan Traditional to OpenCC Traditional
+
+</Accordion>
+
+<Accordion title="Japanese Kanji">
+
+- `jp2t` - Japanese Shinjitai to Traditional (Kyūjitai)
+- `t2jp` - Traditional (Kyūjitai) to Japanese Shinjitai
+
+</Accordion>
+</AccordionGroup>
+
+### Testing Multiple Configurations
+
+When modifying `STPhrases.txt` or `STCharacters.txt`, test multiple configurations:
+
+```json
+{
+  "id": "comprehensive_test",
+  "input": "简体文字",
+  "expected": {
+    "s2t": "繁體文字",
+    "s2tw": "繁體文字",
+    "s2twp": "臺灣慣用詞",
+    "s2hk": "香港繁體"
+  }
+}
+```
+
+This ensures your changes work correctly across all conversion types.
+
+## Running Tests
+
+### Install Bazel
+
+OpenCC uses [Bazel](https://bazel.build/) as the build system.
+
+<Steps>
+<Step title="macOS">
+
+```bash
+brew install bazel
+```
+
+</Step>
+
+<Step title="Ubuntu/Debian">
+
+```bash
+sudo apt install bazel
+```
+
+</Step>
+
+<Step title="Other systems">
+
+See the [Bazel installation guide](https://bazel.build/install).
+
+</Step>
+</Steps>
+
+### Run All Tests
+
+```bash
+bazel test --test_output=all //src/... //data/... //test/... //python/...
+```
+
+### Run Specific Tests
+
+<Accordion title="Dictionary tests only">
+
+```bash
+bazel test //data/dictionary:dictionary_test
+```
+
+</Accordion>
+
+<Accordion title="Configuration validation">
+
+```bash
+bazel test //data/config:config_dict_validation_test
+```
+
+</Accordion>
+
+<Accordion title="Conversion tests">
+
+```bash
+bazel test //test/...
+```
+
+</Accordion>
+
+### Test Output Options
+
+- `--test_output=all` - Show all test output
+- `--test_output=errors` - Show only failed tests
+
+## Special Considerations
+
+### Simplified to Traditional Conversions
+
+<Warning>
+Changes to Simplified-Traditional dictionaries affect **multiple configurations**.
+</Warning>
+
+When modifying these dictionaries:
+
+- `STCharacters.txt` / `STPhras.txt` - Affects `s2t`, `s2tw`, `s2twp`, `s2hk`
+- `TWPhrases.txt` - Must also update `TWPhrasesRev.txt`
+- `TWPhrasesRev.txt` - Must also update `TWPhrases.txt`
+
+**Test all affected configurations:**
+
+```json
+{
+  "id": "test_multiple_configs",
+  "input": "测试",
+  "expected": {
+    "s2t": "測試",
+    "s2tw": "測試",
+    "s2twp": "測試",
+    "s2hk": "測試"
+  }
+}
+```
+
+### Common Scenarios
+
+| Modification | Configurations to Test |
+|--------------|------------------------|
+| `STCharacters.txt` | `s2t` minimum |
+| `STPhrases.txt` | `s2t`, `s2tw`, `s2twp`, `s2hk` |
+| `TWPhrases*.txt` | `s2tw`, `s2twp` |
+| `TWVariants.txt` | `s2tw`, `s2twp` |
+| `HKVariants*.txt` | `s2hk` |
+
+## Submitting Changes
+
+### Pre-submission Checklist
+
+Before submitting a pull request:
+
+- [ ] Dictionary files use **Tab characters** (not spaces) as separators
+- [ ] Dictionary files are **sorted** using `sort.py` or `sort_all.py`
+- [ ] Added corresponding test cases to `testcases.json`
+- [ ] Tests **failed before** changes (confirming the issue exists)
+- [ ] Tests **pass after** changes (confirming the fix works)
+- [ ] All tests pass: `bazel test --test_output=all //src/... //data/... //test/...`
+
+### Creating a Pull Request
+
+<Steps>
+<Step title="Fork and clone">
+
+```bash
+# Fork the repository on GitHub first
+git clone https://github.com/YOUR_USERNAME/OpenCC.git
+cd OpenCC
+```
+
+</Step>
+
+<Step title="Create a branch">
+
+```bash
+git checkout -b fix-conversion-issue
+```
+
+</Step>
+
+<Step title="Make changes and test">
+
+```bash
+# Edit files
+vim data/dictionary/STPhrases.txt
+vim test/testcases/testcases.json
+
+# Sort dictionaries
+python3 data/scripts/sort_all.py data/dictionary
+
+# Run tests
+bazel test --test_output=all //src/... //data/... //test/...
+```
+
+</Step>
+
+<Step title="Commit and push">
+
+```bash
+git add data/dictionary/STPhrases.txt test/testcases/testcases.json
+git commit -m "Fix: Correct conversion for 软体动物 (software vs mollusk)"
+git push origin fix-conversion-issue
+```
+
+</Step>
+
+<Step title="Open pull request">
+
+Go to GitHub and open a pull request with:
+- Clear description of the issue being fixed
+- Link to any related GitHub issues
+- Summary of test cases added
+
+</Step>
+</Steps>
+
+## Code Contributions
+
+### Building Locally
+
+<Accordion title="Build with CMake">
+
+```bash
+mkdir build
+cd build
+cmake ..
+make
+make test
+```
+
+</Accordion>
+
+<Accordion title="Build with Bazel">
+
+```bash
+# Build everything
+bazel build //...
+
+# Build specific target
+bazel build //:opencc
+
+# Run tests
+bazel test --test_output=all //...
+```
+
+</Accordion>
+
+### Code Style
+
+- Use **C++17** standard (OpenCC 1.2+)
+- Follow existing code formatting
+- Add comments for complex logic
+- Write unit tests for new features
+- Update documentation for API changes
+
+## Community Resources
+
+<CardGroup cols={2}>
+<Card title="GitHub Issues" icon="github" href="https://github.com/BYVoid/OpenCC/issues">
+  Report bugs and request features
+</Card>
+
+<Card title="Telegram Group" icon="telegram" href="https://t.me/open_chinese_convert">
+  Join the community discussion
+</Card>
+
+<Card title="Pull Requests" icon="code-pull-request" href="https://github.com/BYVoid/OpenCC/pulls">
+  View and review pending changes
+</Card>
+
+<Card title="Documentation" icon="book" href="https://byvoid.github.io/OpenCC/">
+  Read the API documentation
+</Card>
+</CardGroup>
+
+## Getting Help
+
+If you have questions or need assistance:
+
+1. **Search existing issues**: Your question may already be answered
+2. **Check documentation**: Review the [README](https://github.com/BYVoid/OpenCC) and API docs
+3. **Ask in Telegram**: Join the [discussion group](https://t.me/open_chinese_convert)
+4. **Open an issue**: Create a [GitHub issue](https://github.com/BYVoid/OpenCC/issues/new) with details
+
+<Note>
+When reporting issues, include:
+- OpenCC version
+- Operating system
+- Input text and expected output
+- Actual output (if applicable)
+- Configuration file used
+</Note>
+
+Thank you for contributing to OpenCC! Your efforts help improve Chinese text conversion for everyone.

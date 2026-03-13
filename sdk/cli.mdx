@@ -1,0 +1,617 @@
+---
+title: Command Line Tools
+description: Complete reference for OpenCC command-line utilities
+---
+
+OpenCC provides three command-line tools for text conversion, dictionary management, and phrase extraction.
+
+## opencc
+
+The main command-line tool for converting Chinese text between variants.
+
+### Synopsis
+
+```bash
+opencc [-c config] [-i input] [-o output] [--path path] [--noflush]
+```
+
+### Options
+
+<ParamField path="-c, --config" type="string" default="s2t.json">
+  Configuration file to use for conversion.
+  
+  **Available configurations:**
+  - `s2t.json` - Simplified to Traditional
+  - `t2s.json` - Traditional to Simplified
+  - `s2tw.json` - Simplified to Traditional (Taiwan)
+  - `tw2s.json` - Traditional (Taiwan) to Simplified
+  - `s2hk.json` - Simplified to Traditional (Hong Kong)
+  - `hk2s.json` - Traditional (Hong Kong) to Simplified
+  - `s2twp.json` - Simplified to Traditional (Taiwan with phrases)
+  - `tw2sp.json` - Traditional (Taiwan) to Simplified (with phrases)
+  - `t2tw.json` - Traditional to Traditional (Taiwan)
+  - `tw2t.json` - Traditional (Taiwan) to Traditional
+  - `t2hk.json` - Traditional to Traditional (Hong Kong)
+  - `hk2t.json` - Traditional (Hong Kong) to Traditional
+  - `t2jp.json` - Traditional to Japanese Kanji
+  - `jp2t.json` - Japanese Kanji to Traditional
+  
+  **Example:**
+  ```bash
+  opencc -c s2t.json
+  opencc -c /path/to/custom.json
+  ```
+</ParamField>
+
+<ParamField path="-i, --input" type="string">
+  Input file path. If omitted, reads from standard input (stdin).
+  
+  **Example:**
+  ```bash
+  opencc -i input.txt
+  ```
+</ParamField>
+
+<ParamField path="-o, --output" type="string">
+  Output file path. If omitted, writes to standard output (stdout).
+  
+  **Example:**
+  ```bash
+  opencc -o output.txt
+  ```
+</ParamField>
+
+<ParamField path="--path" type="string" multiple>
+  Additional paths to search for configuration and dictionary files. Can be specified multiple times.
+  
+  **Example:**
+  ```bash
+  opencc --path /usr/local/share/opencc --path /opt/opencc/data
+  ```
+</ParamField>
+
+<ParamField path="--noflush" type="boolean" default="false">
+  Disable flushing output after each line. Improves performance for large files.
+  
+  Automatically enabled when using `-o/--output`.
+  
+  **Example:**
+  ```bash
+  opencc --noflush < input.txt
+  ```
+</ParamField>
+
+### Usage Examples
+
+#### Basic Conversion
+
+```bash
+# Simplified to Traditional
+echo "汉字" | opencc -c s2t.json
+# Output: 漢字
+
+# Traditional to Simplified
+echo "漢字" | opencc -c t2s.json
+# Output: 汉字
+```
+
+#### File Conversion
+
+```bash
+# Convert file
+opencc -c s2t.json -i input.txt -o output.txt
+
+# Using I/O redirection
+opencc -c s2t.json < input.txt > output.txt
+
+# Read from file, write to stdout
+opencc -c s2t.json -i input.txt
+```
+
+#### Pipeline Processing
+
+```bash
+# Process text in pipeline
+cat document.txt | opencc -c s2tw.json | less
+
+# Chain multiple conversions
+echo "简体中文" | opencc -c s2t.json | opencc -c t2tw.json
+
+# Convert and compress
+opencc -c s2t.json -i large.txt | gzip > output.txt.gz
+```
+
+#### Batch Processing
+
+```bash
+# Convert all .txt files in directory
+for file in *.txt; do
+  opencc -c s2t.json -i "$file" -o "${file%.txt}_trad.txt"
+done
+
+# Parallel processing with GNU parallel
+find . -name "*.txt" | parallel opencc -c s2t.json -i {} -o {.}_converted.txt
+```
+
+#### Custom Configuration
+
+```bash
+# Use custom configuration file
+opencc -c /path/to/custom.json -i input.txt -o output.txt
+
+# With custom dictionary paths
+opencc -c custom.json --path /custom/dicts --path /usr/share/opencc -i input.txt
+```
+
+### Line-by-Line vs. Buffered Mode
+
+<Tabs>
+  <Tab title="Line-by-Line (Default)">
+    When reading from stdin without `-i`, `opencc` processes text line by line, flushing after each line:
+    
+    ```bash
+    # Interactive mode - see results immediately
+    opencc -c s2t.json
+    汉字  # Type and press Enter
+    漢字  # Output appears immediately
+    ```
+    
+    <Note>
+      Line-by-line mode is ideal for interactive use and streaming applications.
+    </Note>
+  </Tab>
+  
+  <Tab title="Buffered (File Input)">
+    When using `-i` or `-o`, `opencc` uses buffered I/O for better performance:
+    
+    ```bash
+    # Buffered file conversion (faster)
+    opencc -c s2t.json -i large_file.txt -o output.txt
+    ```
+    
+    <Note>
+      Buffered mode is faster for large files and automatically handles UTF-8 boundaries.
+    </Note>
+  </Tab>
+</Tabs>
+
+### Performance Tips
+
+1. **Use file I/O for large texts:**
+   ```bash
+   # Fast - uses buffered I/O
+   opencc -c s2t.json -i large.txt -o output.txt
+   
+   # Slower - line-by-line processing
+   cat large.txt | opencc -c s2t.json > output.txt
+   ```
+
+2. **Disable flushing for better throughput:**
+   ```bash
+   opencc -c s2t.json --noflush < input.txt > output.txt
+   ```
+
+3. **Process in parallel:**
+   ```bash
+   # Split large file and process in parallel
+   split -l 10000 large.txt chunk_
+   ls chunk_* | parallel opencc -c s2t.json -i {} -o {}.out
+   cat chunk_*.out > final_output.txt
+   ```
+
+## opencc_dict
+
+Utility for converting dictionaries between different formats.
+
+### Synopsis
+
+```bash
+opencc_dict -i input -o output -f format_from -t format_to
+```
+
+### Options
+
+<ParamField path="-i, --input" type="string" required>
+  Path to input dictionary file.
+  
+  **Example:**
+  ```bash
+  opencc_dict -i custom.txt
+  ```
+</ParamField>
+
+<ParamField path="-o, --output" type="string" required>
+  Path to output dictionary file.
+  
+  **Example:**
+  ```bash
+  opencc_dict -o custom.ocd2
+  ```
+</ParamField>
+
+<ParamField path="-f, --from" type="string" required>
+  Input dictionary format.
+  
+  **Supported formats:**
+  - `text` - Plain text format (one entry per line: `key\tvalue` or `key\tvalue1 value2 ...`)
+  - `ocd2` - Binary Marisa trie format (default, recommended)
+  - `ocd` - Legacy binary Darts trie format (requires ENABLE_DARTS)
+  
+  **Example:**
+  ```bash
+  opencc_dict -f text
+  ```
+</ParamField>
+
+<ParamField path="-t, --to" type="string" required>
+  Output dictionary format.
+  
+  **Supported formats:**
+  - `text` - Plain text format
+  - `ocd2` - Binary Marisa trie format (recommended)
+  - `ocd` - Legacy binary Darts trie format
+  
+  **Example:**
+  ```bash
+  opencc_dict -t ocd2
+  ```
+</ParamField>
+
+### Dictionary Format: Text
+
+Text dictionaries are plain UTF-8 files with one entry per line:
+
+```text
+# Format: key<TAB>value1 value2 ...
+汉字	漢字
+中国	中國
+计算机	計算機 電腦
+```
+
+**Rules:**
+- One entry per line
+- Key and values separated by TAB (`\t`)
+- Multiple values separated by space
+- Lines starting with `#` are comments
+- Empty lines are ignored
+
+### Usage Examples
+
+#### Text to Binary
+
+```bash
+# Convert text dictionary to binary format
+opencc_dict -i custom.txt -o custom.ocd2 -f text -t ocd2
+
+# Example custom.txt:
+# 鼠标	滑鼠
+# 软件	軟體
+# 硬件	硬體
+```
+
+#### Binary to Text
+
+```bash
+# Export binary dictionary to text for editing
+opencc_dict -i STCharacters.ocd2 -o STCharacters.txt -f ocd2 -t text
+
+# Edit the text file
+vim STCharacters.txt
+
+# Convert back to binary
+opencc_dict -i STCharacters.txt -o STCharacters.ocd2 -f text -t ocd2
+```
+
+#### Format Conversion
+
+```bash
+# Convert legacy .ocd to new .ocd2 format
+opencc_dict -i old.ocd -o new.ocd2 -f ocd -t ocd2
+
+# Convert .ocd2 to .ocd (for compatibility)
+opencc_dict -i new.ocd2 -o old.ocd -f ocd2 -t ocd
+```
+
+### Creating Custom Dictionaries
+
+<Steps>
+  <Step title="Create text dictionary">
+    Create a text file with your custom mappings:
+    
+    ```bash
+    cat > mydictionary.txt << 'EOF'
+    # Custom Simplified to Traditional mappings
+    程序员	程式設計師
+    数据库	資料庫
+    操作系统	作業系統
+    EOF
+    ```
+  </Step>
+  
+  <Step title="Convert to binary">
+    Convert the text dictionary to binary format:
+    
+    ```bash
+    opencc_dict -i mydictionary.txt -o mydictionary.ocd2 -f text -t ocd2
+    ```
+  </Step>
+  
+  <Step title="Create configuration">
+    Create a custom configuration file:
+    
+    ```json
+    {
+      "name": "Custom S2T",
+      "segmentation": {
+        "type": "mmseg",
+        "dict": {
+          "type": "ocd2",
+          "file": "TSPhrases.ocd2"
+        }
+      },
+      "conversion_chain": [{
+        "dict": {
+          "type": "ocd2",
+          "file": "mydictionary.ocd2"
+        }
+      }, {
+        "dict": {
+          "type": "ocd2",
+          "file": "STCharacters.ocd2"
+        }
+      }]
+    }
+    ```
+  </Step>
+  
+  <Step title="Use the custom configuration">
+    ```bash
+    opencc -c mycustom.json -i input.txt -o output.txt
+    ```
+  </Step>
+</Steps>
+
+## opencc_phrase_extract
+
+Utility for extracting phrases from Chinese text corpus using statistical methods.
+
+### Synopsis
+
+```bash
+opencc_phrase_extract -o output file1 [file2 ...]
+```
+
+### Options
+
+<ParamField path="-o, --output" type="string" required>
+  Output file for extracted phrases.
+  
+  **Example:**
+  ```bash
+  opencc_phrase_extract -o phrases.txt corpus.txt
+  ```
+</ParamField>
+
+<ParamField path="files" type="string" multiple required>
+  Input text files to analyze. Multiple files can be specified.
+  
+  **Example:**
+  ```bash
+  opencc_phrase_extract -o phrases.txt doc1.txt doc2.txt doc3.txt
+  ```
+</ParamField>
+
+### Output Format
+
+The output file contains one phrase per line with statistics:
+
+```text
+phrase frequency log_probability cohesion entropy prefix_entropy suffix_entropy
+```
+
+**Columns:**
+- `phrase` - Extracted phrase
+- `frequency` - Occurrence count
+- `log_probability` - Log probability score
+- `cohesion` - Internal cohesion score
+- `entropy` - Combined boundary entropy
+- `prefix_entropy` - Left boundary entropy
+- `suffix_entropy` - Right boundary entropy
+
+### Usage Examples
+
+#### Extract Phrases
+
+```bash
+# Extract from single file
+opencc_phrase_extract -o phrases.txt corpus.txt
+
+# Extract from multiple files
+opencc_phrase_extract -o phrases.txt book1.txt book2.txt book3.txt
+
+# Extract from all text files
+opencc_phrase_extract -o phrases.txt *.txt
+```
+
+#### Filter Results
+
+```bash
+# Extract phrases and filter by frequency
+opencc_phrase_extract -o all_phrases.txt corpus.txt
+awk '$2 >= 10' all_phrases.txt > frequent_phrases.txt
+
+# Sort by entropy (better phrase boundaries)
+opencc_phrase_extract -o phrases.txt corpus.txt
+sort -k5 -nr phrases.txt | head -1000 > top_phrases.txt
+
+# Extract only high-quality phrases
+opencc_phrase_extract -o phrases.txt corpus.txt
+awk '$2 >= 5 && $4 >= 0.5 && $5 >= 2.0' phrases.txt > quality_phrases.txt
+```
+
+#### Create Dictionary from Extracted Phrases
+
+```bash
+# Extract phrases
+opencc_phrase_extract -o phrases.txt simplified_corpus.txt
+
+# Convert to dictionary format (assuming 1:1 mapping with traditional form)
+awk '{print $1 "\t" $1}' phrases.txt > phrase_dict.txt
+
+# Convert to binary
+opencc_dict -i phrase_dict.txt -o phrase_dict.ocd2 -f text -t ocd2
+```
+
+## Environment Variables
+
+### OPENCC_DATA_DIR
+
+<ParamField path="OPENCC_DATA_DIR" type="string">
+  Specifies alternative location for configuration and dictionary files.
+  
+  **Default search paths:**
+  1. Current directory
+  2. Executable directory
+  3. System installation directory (`/usr/share/opencc`, `/usr/local/share/opencc`)
+  4. `OPENCC_DATA_DIR` (if set)
+  
+  **Example:**
+  ```bash
+  export OPENCC_DATA_DIR=/custom/opencc/data
+  opencc -c s2t.json
+  ```
+</ParamField>
+
+## Exit Codes
+
+All OpenCC tools use standard exit codes:
+
+- `0` - Success
+- `1` - Error (file not found, invalid configuration, conversion failure, etc.)
+
+**Example:**
+```bash
+if opencc -c s2t.json -i input.txt -o output.txt; then
+  echo "Conversion successful"
+else
+  echo "Conversion failed" >&2
+  exit 1
+fi
+```
+
+## Shell Integration Examples
+
+### Bash Function
+
+```bash
+# Add to ~/.bashrc
+function zh_convert() {
+  local config="${2:-s2t.json}"
+  echo "$1" | opencc -c "$config"
+}
+
+# Usage
+zh_convert "汉字" s2t.json
+zh_convert "漢字" t2s.json
+```
+
+### Git Hook
+
+```bash
+#!/bin/bash
+# .git/hooks/pre-commit
+# Auto-convert Simplified to Traditional in documentation
+
+for file in $(git diff --cached --name-only --diff-filter=ACM | grep '\.md$'); do
+  if [[ $file == docs/zh-CN/* ]]; then
+    # Convert to Traditional Chinese
+    output="${file/zh-CN/zh-TW}"
+    mkdir -p "$(dirname "$output")"
+    opencc -c s2tw.json -i "$file" -o "$output"
+    git add "$output"
+  fi
+done
+```
+
+### Vim Integration
+
+```vim
+" Add to ~/.vimrc
+" Convert selection to Traditional
+vnoremap <Leader>ct :!opencc -c s2t.json<CR>
+
+" Convert selection to Simplified
+vnoremap <Leader>cs :!opencc -c t2s.json<CR>
+
+" Convert entire file
+nnoremap <Leader>ct :%!opencc -c s2t.json<CR>
+nnoremap <Leader>cs :%!opencc -c t2s.json<CR>
+```
+
+### Makefile Integration
+
+```makefile
+# Convert all documentation
+DOCS_SRC = $(wildcard docs/zh-CN/*.md)
+DOCS_TW = $(patsubst docs/zh-CN/%.md,docs/zh-TW/%.md,$(DOCS_SRC))
+
+.PHONY: docs
+docs: $(DOCS_TW)
+
+docs/zh-TW/%.md: docs/zh-CN/%.md
+	@mkdir -p $(dir $@)
+	opencc -c s2tw.json -i $< -o $@
+
+clean:
+	rm -rf docs/zh-TW
+```
+
+## Troubleshooting
+
+### Configuration Not Found
+
+```bash
+# Error: s2t.json not found or not accessible.
+
+# Solution 1: Specify full path
+opencc -c /usr/share/opencc/s2t.json
+
+# Solution 2: Set OPENCC_DATA_DIR
+export OPENCC_DATA_DIR=/usr/share/opencc
+opencc -c s2t.json
+
+# Solution 3: Use --path option
+opencc -c s2t.json --path /usr/share/opencc
+```
+
+### Dictionary Not Found
+
+```bash
+# Error: STCharacters.ocd2 not found
+
+# Check which files are missing
+ls /usr/share/opencc/*.ocd2
+
+# Rebuild dictionaries (if from source)
+cd OpenCC/build
+make
+make install
+```
+
+### Encoding Issues
+
+```bash
+# Ensure input is UTF-8
+iconv -f GBK -t UTF-8 input_gbk.txt | opencc -c s2t.json > output.txt
+
+# Check file encoding
+file -i input.txt
+```
+
+## See Also
+
+- [C/C++ API](/sdk/cpp) - C++ and C API reference
+- [Python API](/sdk/python) - Python bindings
+- [Node.js API](/sdk/nodejs) - Node.js bindings
+- [Configuration](/advanced/configurations) - Configuration file format
+- [Custom Dictionaries](/advanced/custom-dictionaries) - Creating custom dictionaries

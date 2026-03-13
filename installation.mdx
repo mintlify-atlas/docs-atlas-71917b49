@@ -1,0 +1,434 @@
+---
+title: 'Installation'
+description: 'Install OpenCC on your platform using package managers or build from source'
+---
+
+## System Requirements
+
+<Tabs>
+  <Tab title="Linux">
+    - **Compiler**: GCC 4.6+ or Clang 3.2+
+    - **Build System**: CMake 3.5+ or Bazel
+    - **Python**: Python 3.x (for Python bindings)
+    - **Node.js**: Node.js 20-24 (for Node.js bindings)
+  </Tab>
+  <Tab title="macOS">
+    - **OS Version**: macOS 10.9+ (x86_64) or macOS 11.0+ (arm64)
+    - **Compiler**: Xcode Command Line Tools
+    - **Build System**: CMake 3.5+ or Bazel
+    - **Python**: Python 3.x (for Python bindings)
+    - **Node.js**: Node.js 20-24 (for Node.js bindings)
+  </Tab>
+  <Tab title="Windows">
+    - **Compiler**: Visual Studio 2015+ (MSVC)
+    - **Build System**: CMake 3.5+
+    - **Architecture**: x86 or x86_64
+    - **Python**: Python 3.x (for Python bindings)
+    - **Node.js**: Node.js 20-24 (for Node.js bindings)
+  </Tab>
+</Tabs>
+
+## Package Managers
+
+The easiest way to install OpenCC is using your platform's package manager.
+
+### Node.js (npm)
+
+Install the OpenCC Node.js binding:
+
+<CodeGroup>
+```bash npm
+npm install opencc
+```
+
+```bash yarn
+yarn add opencc
+```
+
+```bash pnpm
+pnpm add opencc
+```
+</CodeGroup>
+
+<Info>
+The Node.js package includes prebuilt binaries for Windows, macOS, and Linux. It will automatically download the appropriate binary for your platform.
+</Info>
+
+**Supported Node.js versions**: 20, 21, 22, 23, 24
+
+### Python (pip)
+
+Install the OpenCC Python package:
+
+<CodeGroup>
+```bash pip
+pip install opencc
+```
+
+```bash pip3
+pip3 install opencc
+```
+
+```bash poetry
+poetry add opencc
+```
+</CodeGroup>
+
+The package includes prebuilt wheels for:
+- Windows (x86, x86_64)
+- macOS (x86_64, arm64)
+- Linux (manylinux2014 x86_64, aarch64)
+
+<Note>
+If a prebuilt wheel is not available for your platform, pip will automatically build from source. This requires CMake and a C++ compiler.
+</Note>
+
+### Linux Distributions
+
+<Tabs>
+  <Tab title="Debian/Ubuntu">
+    ```bash
+    sudo apt update
+    sudo apt install opencc
+    ```
+
+    Available in Debian and Ubuntu official repositories.
+  </Tab>
+  <Tab title="Fedora">
+    ```bash
+    sudo dnf install opencc
+    ```
+
+    Available in Fedora official repositories.
+  </Tab>
+  <Tab title="Arch Linux">
+    ```bash
+    sudo pacman -S opencc
+    ```
+
+    Available in Arch Linux official repositories.
+  </Tab>
+</Tabs>
+
+### macOS (Homebrew)
+
+Install using Homebrew:
+
+```bash
+brew install opencc
+```
+
+This installs the command-line tools and C/C++ libraries.
+
+### Bazel
+
+Add OpenCC to your `MODULE.bazel`:
+
+```python
+bazel_dep(name = "opencc", version = "1.2.0")
+```
+
+Or add to your `WORKSPACE` file:
+
+```python
+http_archive(
+    name = "opencc",
+    urls = ["https://github.com/BYVoid/OpenCC/archive/ver.1.2.0.tar.gz"],
+    strip_prefix = "OpenCC-ver.1.2.0",
+)
+```
+
+See [OpenCC Bazel Example](https://github.com/BYVoid/opencc-bazel-example) for a complete example.
+
+## Prebuilt Binaries
+
+### Windows
+
+Download prebuilt binaries from AppVeyor:
+
+<CardGroup cols={2}>
+  <Card title="Windows x64" icon="windows">
+    [Download Latest Build](https://ci.appveyor.com/api/projects/Carbo/opencc/artifacts/OpenCC.zip?branch=master&job=Environment:%20nodejs_version=none;%20Platform:%20x64)
+  </Card>
+  <Card title="Windows x86" icon="windows">
+    [Download Latest Build](https://ci.appveyor.com/api/projects/Carbo/opencc/artifacts/OpenCC.zip?branch=master&job=Environment:%20nodejs_version=none;%20Platform:%20x86)
+  </Card>
+</CardGroup>
+
+Extract the ZIP file and add the `bin` directory to your system PATH.
+
+## Building from Source
+
+For advanced users or platforms without prebuilt packages, you can build OpenCC from source.
+
+<Steps>
+  <Step title="Clone the repository">
+    ```bash
+    git clone https://github.com/BYVoid/OpenCC.git
+    cd OpenCC
+    ```
+  </Step>
+
+  <Step title="Build with CMake">
+    <Tabs>
+      <Tab title="Linux/macOS">
+        ```bash
+        make
+        sudo make install
+        ```
+
+        This will:
+        - Configure the build with CMake
+        - Compile the C++ library and tools
+        - Install to `/usr/local` (or your CMAKE_INSTALL_PREFIX)
+      </Tab>
+      <Tab title="Windows">
+        ```bash
+        build.cmd
+        ```
+
+        This will build the project using Visual Studio. The output will be in the `build` directory.
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="(Optional) Build with Bazel">
+    ```bash
+    bazel build //:opencc
+    ```
+
+    The binary will be in `bazel-bin/opencc`.
+  </Step>
+
+  <Step title="(Optional) Run tests">
+    <Tabs>
+      <Tab title="CMake">
+        ```bash
+        make test
+        ```
+      </Tab>
+      <Tab title="Bazel">
+        ```bash
+        bazel test --test_output=all //src/... //data/... //test/...
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+</Steps>
+
+<Warning>
+Building from source requires:
+- **CMake** 3.5 or later
+- **C++ compiler** with C++17 support
+- **Make** (Linux/macOS) or **Visual Studio** (Windows)
+</Warning>
+
+### Build Options
+
+Customize the build by passing options to CMake:
+
+```bash
+cmake -B build \
+  -DBUILD_SHARED_LIBS=ON \
+  -DENABLE_GTEST=ON \
+  -DENABLE_BENCHMARK=ON \
+  -DCMAKE_INSTALL_PREFIX=/usr/local
+
+cmake --build build
+sudo cmake --install build
+```
+
+**Available options:**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `BUILD_SHARED_LIBS` | `ON` | Build shared libraries instead of static |
+| `ENABLE_GTEST` | `OFF` | Build unit tests with Google Test |
+| `ENABLE_BENCHMARK` | `OFF` | Build benchmark tests |
+| `ENABLE_DARTS` | `ON` | Enable Darts dictionary format (.ocd) |
+| `BUILD_PYTHON` | `OFF` | Build Python bindings |
+| `BUILD_DOCUMENTATION` | `OFF` | Generate Doxygen documentation |
+| `CMAKE_INSTALL_PREFIX` | `/usr/local` | Installation directory |
+
+## Verify Installation
+
+After installation, verify that OpenCC is working correctly:
+
+<Tabs>
+  <Tab title="Command Line">
+    ```bash
+    opencc --version
+    ```
+
+    Expected output:
+    ```
+    Open Chinese Convert (OpenCC) version 1.2.0
+    ```
+
+    Test a conversion:
+    ```bash
+    echo "汉字" | opencc -c s2t
+    ```
+
+    Expected output:
+    ```
+    漢字
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    import opencc
+    print(opencc.__version__)
+
+    converter = opencc.OpenCC('s2t')
+    result = converter.convert('汉字')
+    print(result)  # 漢字
+    ```
+  </Tab>
+  <Tab title="Node.js">
+    ```javascript
+    const OpenCC = require('opencc');
+    console.log(OpenCC.version);
+
+    const converter = new OpenCC('s2t.json');
+    const result = converter.convertSync('汉字');
+    console.log(result);  // 漢字
+    ```
+  </Tab>
+</Tabs>
+
+## Platform-Specific Notes
+
+### Linux
+
+**Shared Library Path**: If you installed to a non-standard location, you may need to update your library path:
+
+```bash
+export LD_LIBRARY_PATH=/path/to/opencc/lib:$LD_LIBRARY_PATH
+```
+
+**Configuration Files**: By default, OpenCC looks for configuration files in:
+- `/usr/local/share/opencc/` (if installed to `/usr/local`)
+- Or set `OPENCC_DATA_DIR` environment variable
+
+### macOS
+
+**Apple Silicon (M1/M2)**: The Homebrew formula supports both Intel and Apple Silicon. Python and Node.js packages include native arm64 builds.
+
+**Dynamic Library Path**: If you built from source, you may need to set:
+
+```bash
+export DYLD_LIBRARY_PATH=/path/to/opencc/lib:$DYLD_LIBRARY_PATH
+```
+
+### Windows
+
+**PATH Environment Variable**: Add the OpenCC `bin` directory to your PATH:
+
+```
+C:\Program Files\OpenCC\bin
+```
+
+**DLL Dependencies**: Make sure `opencc.dll` is in the same directory as your executable or in the system PATH.
+
+**Configuration Files**: Set the `OPENCC_DATA_DIR` environment variable to the configuration directory:
+
+```
+OPENCC_DATA_DIR=C:\Program Files\OpenCC\share\opencc
+```
+
+## Custom Configuration Path
+
+To use custom configuration files or dictionaries, set the `OPENCC_DATA_DIR` environment variable:
+
+<CodeGroup>
+```bash Linux/macOS
+export OPENCC_DATA_DIR=/path/to/your/config/dir
+opencc -c s2t
+```
+
+```powershell Windows PowerShell
+$env:OPENCC_DATA_DIR = "C:\path\to\your\config\dir"
+opencc -c s2t
+```
+
+```batch Windows CMD
+set OPENCC_DATA_DIR=C:\path\to\your\config\dir
+opencc -c s2t
+```
+</CodeGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Error: opencc command not found">
+    The OpenCC binary is not in your PATH. Either:
+    - Install using a package manager (recommended)
+    - Add the installation directory to your PATH
+    - Use the full path to the binary: `/usr/local/bin/opencc`
+  </Accordion>
+
+  <Accordion title="Error: cannot open shared object file">
+    The OpenCC shared library cannot be found. Set the library path:
+
+    ```bash
+    # Linux
+    export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+
+    # macOS
+    export DYLD_LIBRARY_PATH=/usr/local/lib:$DYLD_LIBRARY_PATH
+    ```
+  </Accordion>
+
+  <Accordion title="Python: No module named 'opencc'">
+    The OpenCC Python package is not installed. Install it:
+
+    ```bash
+    pip install opencc
+    ```
+
+    If building from source, make sure to enable Python bindings:
+
+    ```bash
+    cmake -DBUILD_PYTHON=ON
+    ```
+  </Accordion>
+
+  <Accordion title="Node.js: Build failed during npm install">
+    The prebuilt binary is not available for your platform. Make sure you have:
+    - A C++ compiler (GCC, Clang, or MSVC)
+    - CMake 3.5 or later
+    - Node.js development headers
+
+    Then retry:
+
+    ```bash
+    npm install opencc --build-from-source
+    ```
+  </Accordion>
+
+  <Accordion title="Configuration file not found">
+    OpenCC cannot find the configuration files. Set the `OPENCC_DATA_DIR` environment variable:
+
+    ```bash
+    export OPENCC_DATA_DIR=/usr/local/share/opencc
+    ```
+
+    Or use an absolute path to the configuration file:
+
+    ```bash
+    opencc -c /usr/local/share/opencc/s2t.json
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Learn how to use OpenCC for your first conversion
+  </Card>
+  <Card title="SDK Reference" icon="code" href="/sdk/python">
+    Explore the API documentation for your language
+  </Card>
+</CardGroup>

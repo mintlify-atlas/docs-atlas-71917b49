@@ -1,0 +1,648 @@
+---
+title: Configuration Files
+description: Deep dive into OpenCC's configuration system, dictionary chains, and custom configurations
+---
+
+OpenCC uses JSON configuration files to define conversion behavior, specify dictionary loading order, and configure text segmentation. Understanding the configuration system is essential for customizing conversions and creating regional variants.
+
+## Configuration File Structure
+
+OpenCC configuration files are JSON documents with three main components:
+
+```json
+{
+  "name": "Simplified Chinese to Traditional Chinese",
+  "segmentation": {
+    "type": "mmseg",
+    "dict": {
+      "type": "ocd2",
+      "file": "STPhrases.ocd2"
+    }
+  },
+  "conversion_chain": [{
+    "dict": {
+      "type": "group",
+      "dicts": [{
+        "type": "ocd2",
+        "file": "STPhrases.ocd2"
+      }, {
+        "type": "ocd2",
+        "file": "STCharacters.ocd2"
+      }]
+    }
+  }]
+}
+```
+
+### Configuration Components
+
+<AccordionGroup>
+  <Accordion title="name">
+    Human-readable description of the conversion configuration. This field is informational and doesn't affect conversion behavior.
+  </Accordion>
+
+  <Accordion title="segmentation">
+    Defines how input text is split into segments for conversion. The segmentation dictionary is used for Maximum Matching (MaxMatch) word segmentation.
+    
+    **Fields:**
+    - `type`: Segmentation algorithm (currently only `"mmseg"` is supported)
+    - `dict`: Dictionary used for segmentation (typically phrase dictionaries)
+  </Accordion>
+
+  <Accordion title="conversion_chain">
+    An ordered array of conversion steps. Each step applies dictionary-based transformations sequentially. The order matters significantly for multi-stage conversions.
+  </Accordion>
+</AccordionGroup>
+
+## Preset Configurations
+
+OpenCC ships with 14 preset configurations covering common conversion scenarios:
+
+### Basic Simplified ↔ Traditional
+
+<CodeGroup>
+```json s2t.json
+{
+  "name": "Simplified Chinese to Traditional Chinese",
+  "segmentation": {
+    "type": "mmseg",
+    "dict": {
+      "type": "ocd2",
+      "file": "STPhrases.ocd2"
+    }
+  },
+  "conversion_chain": [{
+    "dict": {
+      "type": "group",
+      "dicts": [
+        {"type": "ocd2", "file": "STPhrases.ocd2"},
+        {"type": "ocd2", "file": "STCharacters.ocd2"}
+      ]
+    }
+  }]
+}
+```
+
+```json t2s.json
+{
+  "name": "Traditional Chinese to Simplified Chinese",
+  "segmentation": {
+    "type": "mmseg",
+    "dict": {
+      "type": "ocd2",
+      "file": "TSPhrases.ocd2"
+    }
+  },
+  "conversion_chain": [{
+    "dict": {
+      "type": "group",
+      "dicts": [
+        {"type": "ocd2", "file": "TSPhrases.ocd2"},
+        {"type": "ocd2", "file": "TSCharacters.ocd2"}
+      ]
+    }
+  }]
+}
+```
+</CodeGroup>
+
+### Regional Variants (Taiwan)
+
+<CodeGroup>
+```json s2tw.json
+{
+  "name": "Simplified Chinese to Traditional Chinese (Taiwan standard)",
+  "segmentation": {
+    "type": "mmseg",
+    "dict": {"type": "ocd2", "file": "STPhrases.ocd2"}
+  },
+  "conversion_chain": [
+    {
+      "dict": {
+        "type": "group",
+        "dicts": [
+          {"type": "ocd2", "file": "STPhrases.ocd2"},
+          {"type": "ocd2", "file": "STCharacters.ocd2"}
+        ]
+      }
+    },
+    {
+      "dict": {"type": "ocd2", "file": "TWVariants.ocd2"}
+    }
+  ]
+}
+```
+
+```json s2twp.json
+{
+  "name": "Simplified Chinese to Traditional Chinese (Taiwan standard, with phrases)",
+  "segmentation": {
+    "type": "mmseg",
+    "dict": {"type": "ocd2", "file": "STPhrases.ocd2"}
+  },
+  "conversion_chain": [
+    {
+      "dict": {
+        "type": "group",
+        "dicts": [
+          {"type": "ocd2", "file": "STPhrases.ocd2"},
+          {"type": "ocd2", "file": "STCharacters.ocd2"}
+        ]
+      }
+    },
+    {"dict": {"type": "ocd2", "file": "TWPhrases.ocd2"}},
+    {"dict": {"type": "ocd2", "file": "TWVariants.ocd2"}}
+  ]
+}
+```
+
+```json tw2s.json
+{
+  "name": "Traditional Chinese (Taiwan standard) to Simplified Chinese",
+  "conversion_chain": [
+    {
+      "dict": {
+        "type": "group",
+        "dicts": [
+          {"type": "ocd2", "file": "TWVariantsRevPhrases.ocd2"},
+          {"type": "ocd2", "file": "TWVariantsRev.ocd2"}
+        ]
+      }
+    },
+    {
+      "dict": {
+        "type": "group",
+        "dicts": [
+          {"type": "ocd2", "file": "TSPhrases.ocd2"},
+          {"type": "ocd2", "file": "TSCharacters.ocd2"}
+        ]
+      }
+    }
+  ]
+}
+```
+</CodeGroup>
+
+<Note>
+The `s2twp` configuration includes both `TWPhrases.ocd2` (Taiwan-specific phrases) and `TWVariants.ocd2` (Taiwan character variants) for more comprehensive Taiwan localization.
+</Note>
+
+### Regional Variants (Hong Kong)
+
+<CodeGroup>
+```json s2hk.json
+{
+  "name": "Simplified Chinese to Traditional Chinese (Hong Kong variant)",
+  "conversion_chain": [
+    {
+      "dict": {
+        "type": "group",
+        "dicts": [
+          {"type": "ocd2", "file": "STPhrases.ocd2"},
+          {"type": "ocd2", "file": "STCharacters.ocd2"}
+        ]
+      }
+    },
+    {"dict": {"type": "ocd2", "file": "HKVariants.ocd2"}}
+  ]
+}
+```
+
+```json hk2s.json
+{
+  "name": "Traditional Chinese (Hong Kong variant) to Simplified Chinese",
+  "conversion_chain": [
+    {
+      "dict": {
+        "type": "group",
+        "dicts": [
+          {"type": "ocd2", "file": "HKVariantsRevPhrases.ocd2"},
+          {"type": "ocd2", "file": "HKVariantsRev.ocd2"}
+        ]
+      }
+    },
+    {
+      "dict": {
+        "type": "group",
+        "dicts": [
+          {"type": "ocd2", "file": "TSPhrases.ocd2"},
+          {"type": "ocd2", "file": "TSCharacters.ocd2"}
+        ]
+      }
+    }
+  ]
+}
+```
+</CodeGroup>
+
+### Traditional Chinese Variants
+
+```json t2tw.json
+{
+  "name": "Traditional Chinese to Traditional Chinese (Taiwan standard)",
+  "segmentation": {
+    "type": "mmseg",
+    "dict": {"type": "ocd2", "file": "TWVariants.ocd2"}
+  },
+  "conversion_chain": [
+    {"dict": {"type": "ocd2", "file": "TWVariants.ocd2"}}
+  ]
+}
+```
+
+```json t2hk.json
+{
+  "name": "Traditional Chinese to Traditional Chinese (Hong Kong variant)",
+  "segmentation": {
+    "type": "mmseg",
+    "dict": {"type": "ocd2", "file": "HKVariants.ocd2"}
+  },
+  "conversion_chain": [
+    {"dict": {"type": "ocd2", "file": "HKVariants.ocd2"}}
+  ]
+}
+```
+
+### Japanese Kanji Conversion
+
+<CodeGroup>
+```json t2jp.json
+{
+  "name": "Traditional Chinese Characters (Kyūjitai) to New Japanese Kanji (Shinjitai)",
+  "segmentation": {
+    "type": "mmseg",
+    "dict": {"type": "ocd2", "file": "JPVariants.ocd2"}
+  },
+  "conversion_chain": [
+    {"dict": {"type": "ocd2", "file": "JPVariants.ocd2"}}
+  ]
+}
+```
+
+```json jp2t.json
+{
+  "name": "New Japanese Kanji (Shinjitai) to Traditional Chinese Characters (Kyūjitai)",
+  "conversion_chain": [{
+    "dict": {
+      "type": "group",
+      "dicts": [
+        {"type": "ocd2", "file": "JPShinjitaiPhrases.ocd2"},
+        {"type": "ocd2", "file": "JPShinjitaiCharacters.ocd2"},
+        {"type": "ocd2", "file": "JPVariantsRev.ocd2"}
+      ]
+    }
+  }]
+}
+```
+</CodeGroup>
+
+<Tip>
+All 14 preset configurations are located in `data/config/` in the OpenCC source repository.
+</Tip>
+
+## Conversion Chains
+
+The `conversion_chain` array defines sequential transformation steps. Each step is applied in order, with the output of one step becoming the input of the next.
+
+### Multi-Stage Conversion
+
+Complex conversions often require multiple stages:
+
+<Steps>
+  <Step title="Base Conversion">
+    Convert between Simplified and Traditional using core dictionaries (phrases first, then characters).
+  </Step>
+  
+  <Step title="Regional Variants">
+    Apply regional character variants (e.g., Taiwan or Hong Kong specific forms).
+  </Step>
+  
+  <Step title="Regional Phrases">
+    Replace phrases with regional idioms and terminology.
+  </Step>
+</Steps>
+
+**Example: `s2twp.json` conversion chain**
+
+```json
+"conversion_chain": [
+  {
+    "dict": {
+      "type": "group",
+      "dicts": [
+        {"type": "ocd2", "file": "STPhrases.ocd2"},
+        {"type": "ocd2", "file": "STCharacters.ocd2"}
+      ]
+    }
+  },
+  {"dict": {"type": "ocd2", "file": "TWPhrases.ocd2"}},
+  {"dict": {"type": "ocd2", "file": "TWVariants.ocd2"}}
+]
+```
+
+This three-stage chain:
+1. Converts Simplified to Traditional (phrases prioritized over characters)
+2. Replaces Mainland phrases with Taiwan equivalents (鼠標 → 滑鼠)
+3. Applies Taiwan character variants (裏 → 裡)
+
+## Dictionary Types
+
+OpenCC supports multiple dictionary formats within configurations:
+
+### Single Dictionary
+
+```json
+{
+  "dict": {
+    "type": "ocd2",
+    "file": "STCharacters.ocd2"
+  }
+}
+```
+
+### Dictionary Group
+
+A `group` type allows multiple dictionaries to be searched sequentially. The first match wins:
+
+```json
+{
+  "dict": {
+    "type": "group",
+    "dicts": [
+      {"type": "ocd2", "file": "STPhrases.ocd2"},
+      {"type": "ocd2", "file": "STCharacters.ocd2"}
+    ]
+  }
+}
+```
+
+<Warning>
+**Dictionary order matters!** Always place phrase dictionaries before character dictionaries to ensure multi-character terms are matched before individual characters.
+</Warning>
+
+### Supported Dictionary Formats
+
+| Format | Type Value | Description | Use Case |
+|--------|-----------|-------------|----------|
+| Text | `text` | Plain text tab-separated | Development, editing |
+| MARISA Trie | `ocd2` | Optimized binary format | Production (default) |
+| Darts Trie | `ocd` | Legacy binary format | Legacy support |
+
+## Segmentation Configuration
+
+The `segmentation` section configures Maximum Matching (MM) word segmentation:
+
+```json
+"segmentation": {
+  "type": "mmseg",
+  "dict": {
+    "type": "ocd2",
+    "file": "STPhrases.ocd2"
+  }
+}
+```
+
+### Segmentation Algorithm
+
+**mmseg** (Maximum Matching Segmentation):
+- Performs longest prefix matching using the segmentation dictionary
+- Splits input into segments before conversion
+- Ensures multi-character words are kept together
+- Unmatched UTF-8 sequences are preserved by character length
+
+<Note>
+The segmentation dictionary is typically a phrase dictionary (e.g., `STPhrases.ocd2`) to ensure compound words and idioms are recognized as single units.
+</Note>
+
+## Creating Custom Configurations
+
+### Basic Custom Configuration
+
+```json custom-s2t.json
+{
+  "name": "Custom Simplified to Traditional",
+  "segmentation": {
+    "type": "mmseg",
+    "dict": {
+      "type": "text",
+      "file": "custom-phrases.txt"
+    }
+  },
+  "conversion_chain": [{
+    "dict": {
+      "type": "group",
+      "dicts": [
+        {"type": "text", "file": "custom-phrases.txt"},
+        {"type": "ocd2", "file": "STCharacters.ocd2"}
+      ]
+    }
+  }]
+}
+```
+
+### Domain-Specific Configuration
+
+Create specialized conversions for technical domains:
+
+```json tech-s2tw.json
+{
+  "name": "Technical Simplified to Taiwan Traditional",
+  "segmentation": {
+    "type": "mmseg",
+    "dict": {"type": "ocd2", "file": "STPhrases.ocd2"}
+  },
+  "conversion_chain": [
+    {
+      "dict": {
+        "type": "group",
+        "dicts": [
+          {"type": "text", "file": "tech-terms.txt"},
+          {"type": "ocd2", "file": "STPhrases.ocd2"},
+          {"type": "ocd2", "file": "STCharacters.ocd2"}
+        ]
+      }
+    },
+    {"dict": {"type": "ocd2", "file": "TWVariants.ocd2"}}
+  ]
+}
+```
+
+Place your custom dictionary first in the group to override default conversions with domain-specific terms.
+
+## Configuration Loading
+
+### Default Configuration Path
+
+OpenCC searches for configuration files in:
+
+1. Current working directory
+2. `PKGDATADIR` (typically `/usr/share/opencc/`)
+3. Executable directory
+
+### OPENCC_DATA_DIR Environment Variable
+
+Override the default configuration directory:
+
+```bash
+export OPENCC_DATA_DIR=/path/to/custom/configs
+opencc -c s2t.json -i input.txt -o output.txt
+```
+
+<CodeGroup>
+```bash Linux/macOS
+export OPENCC_DATA_DIR=/opt/opencc/data
+opencc -c custom-s2t.json -i input.txt -o output.txt
+```
+
+```powershell Windows
+$env:OPENCC_DATA_DIR="C:\opencc\data"
+opencc -c custom-s2t.json -i input.txt -o output.txt
+```
+
+```python Python
+import os
+import opencc
+
+os.environ['OPENCC_DATA_DIR'] = '/path/to/configs'
+converter = opencc.OpenCC('custom-s2t.json')
+```
+
+```javascript Node.js
+process.env.OPENCC_DATA_DIR = '/path/to/configs';
+const { OpenCC } = require('opencc');
+const converter = new OpenCC('custom-s2t.json');
+```
+</CodeGroup>
+
+### Absolute Configuration Paths
+
+You can specify absolute paths to configuration files:
+
+```cpp
+opencc::SimpleConverter converter("/path/to/custom-s2t.json");
+```
+
+```python
+import opencc
+converter = opencc.OpenCC('/path/to/custom-s2t.json')
+```
+
+## Configuration Best Practices
+
+<AccordionGroup>
+  <Accordion title="Always prioritize phrases over characters">
+    In dictionary groups, place phrase dictionaries before character dictionaries to ensure compound words match correctly:
+    
+    ```json
+    "dicts": [
+      {"type": "ocd2", "file": "STPhrases.ocd2"},  // First
+      {"type": "ocd2", "file": "STCharacters.ocd2"}  // Second
+    ]
+    ```
+  </Accordion>
+
+  <Accordion title="Use text format for development">
+    During development, use `text` dictionaries for easy editing. Convert to `ocd2` for production:
+    
+    ```bash
+    opencc_dict -i custom.txt -o custom.ocd2 -f text -t ocd2
+    ```
+  </Accordion>
+
+  <Accordion title="Chain conversions carefully">
+    The order of conversion chain steps matters significantly. Test multi-stage conversions thoroughly:
+    
+    - Base conversion first
+    - Regional phrases second
+    - Regional variants last
+  </Accordion>
+
+  <Accordion title="Keep configurations modular">
+    Create separate configurations for different conversion scenarios rather than one large catch-all configuration.
+  </Accordion>
+</AccordionGroup>
+
+## Advanced Configuration Patterns
+
+### Bi-directional Conversion Setup
+
+Create matching forward and reverse configurations:
+
+<CodeGroup>
+```json forward.json
+{
+  "name": "Source to Target",
+  "conversion_chain": [
+    {"dict": {"type": "ocd2", "file": "SourceToTarget.ocd2"}}
+  ]
+}
+```
+
+```json reverse.json
+{
+  "name": "Target to Source",
+  "conversion_chain": [
+    {"dict": {"type": "ocd2", "file": "TargetToSource.ocd2"}}
+  ]
+}
+```
+</CodeGroup>
+
+### Cascading Regional Variants
+
+```json s2tw-hk-hybrid.json
+{
+  "name": "Simplified to Taiwan with Hong Kong variants",
+  "conversion_chain": [
+    {
+      "dict": {
+        "type": "group",
+        "dicts": [
+          {"type": "ocd2", "file": "STPhrases.ocd2"},
+          {"type": "ocd2", "file": "STCharacters.ocd2"}
+        ]
+      }
+    },
+    {"dict": {"type": "ocd2", "file": "TWVariants.ocd2"}},
+    {"dict": {"type": "ocd2", "file": "HKVariants.ocd2"}}
+  ]
+}
+```
+
+## Troubleshooting
+
+### Configuration Not Found
+
+**Error:** `Cannot open configuration file`
+
+**Solutions:**
+- Verify the configuration file exists in the search path
+- Use an absolute path to the configuration file
+- Set `OPENCC_DATA_DIR` to the correct directory
+- Check file permissions
+
+### Dictionary File Not Found
+
+**Error:** `Dictionary file not found`
+
+**Solutions:**
+- Ensure all referenced dictionary files exist
+- Use absolute paths in the configuration
+- Verify dictionary files are in the same directory as the configuration
+- Check that binary dictionaries (`.ocd2`) are properly compiled
+
+### Incorrect Conversion Results
+
+**Symptoms:** Wrong characters or missing conversions
+
+**Solutions:**
+- Verify dictionary order in groups (phrases before characters)
+- Check conversion chain order
+- Inspect dictionaries for missing or incorrect entries
+- Test with simpler configurations to isolate issues
+
+## See Also
+
+- [Custom Dictionaries](/advanced/custom-dictionaries) - Creating and compiling dictionary files
+- [Building from Source](/advanced/building) - Compiling OpenCC with custom configurations
+- [Command Line Usage](/sdk/cli) - Using configurations with the CLI tool

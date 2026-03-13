@@ -1,0 +1,528 @@
+---
+title: C/C++ API
+description: Complete reference for OpenCC C++ SimpleConverter class and C API
+---
+
+OpenCC provides both a modern C++ API through the `SimpleConverter` class and a low-level C API for maximum compatibility.
+
+## C++ API
+
+### SimpleConverter Class
+
+The `SimpleConverter` class provides a high-level C++ interface for text conversion. It's thread-safe and can be used across multiple threads simultaneously.
+
+#### Header
+
+```cpp
+#include <opencc/SimpleConverter.hpp>
+```
+
+#### Constructors
+
+<ParamField path="SimpleConverter(const std::string& configFileName)" type="constructor">
+  Creates a converter with the specified configuration file.
+  
+  **Parameters:**
+  - `configFileName` - Path to configuration file (e.g., "s2t.json") or full path
+  
+  **Example:**
+  ```cpp
+  opencc::SimpleConverter converter("s2t.json");
+  ```
+</ParamField>
+
+<ParamField path="SimpleConverter(const std::string& configFileName, const std::vector<std::string>& paths)" type="constructor">
+  Creates a converter with additional search paths for configuration and dictionary files.
+  
+  **Parameters:**
+  - `configFileName` - Path to configuration file
+  - `paths` - Additional directories to search for config and dictionary files
+  
+  **Example:**
+  ```cpp
+  std::vector<std::string> paths = {"/usr/local/share/opencc", "/opt/opencc/data"};
+  opencc::SimpleConverter converter("s2t.json", paths);
+  ```
+</ParamField>
+
+<ParamField path="SimpleConverter(const std::string& configFileName, const std::vector<std::string>& paths, const char* argv0)" type="constructor">
+  Creates a converter with additional search paths and the executable path.
+  
+  **Parameters:**
+  - `configFileName` - Path to configuration file
+  - `paths` - Additional directories to search
+  - `argv0` - Path of the executable (from argv[0]), used to locate data files relative to the binary
+  
+  **Example:**
+  ```cpp
+  std::vector<std::string> paths = {"/custom/path"};
+  opencc::SimpleConverter converter("s2t.json", paths, argv[0]);
+  ```
+</ParamField>
+
+#### Methods
+
+<ParamField path="Convert(const std::string& input)" type="std::string">
+  Converts text and returns the result as a new string.
+  
+  **Parameters:**
+  - `input` - UTF-8 encoded text to convert
+  
+  **Returns:** Converted text as `std::string`
+  
+  **Example:**
+  ```cpp
+  std::string result = converter.Convert("汉字");
+  ```
+</ParamField>
+
+<ParamField path="Convert(const char* input)" type="std::string">
+  Converts a C-style null-terminated string.
+  
+  **Parameters:**
+  - `input` - Null-terminated UTF-8 encoded string
+  
+  **Returns:** Converted text as `std::string`
+  
+  **Example:**
+  ```cpp
+  const char* text = "简体中文";
+  std::string result = converter.Convert(text);
+  ```
+</ParamField>
+
+<ParamField path="Convert(const char* input, size_t length)" type="std::string">
+  Converts text with explicit length specification.
+  
+  **Parameters:**
+  - `input` - UTF-8 encoded string
+  - `length` - Maximum length in bytes to convert
+  
+  **Returns:** Converted text as `std::string`
+  
+  **Example:**
+  ```cpp
+  const char* text = "汉字转换";
+  std::string result = converter.Convert(text, 6); // Convert first 6 bytes
+  ```
+</ParamField>
+
+<ParamField path="Convert(const char* input, char* output)" type="size_t">
+  Converts text and writes to a pre-allocated buffer.
+  
+  <Warning>
+    You must ensure the output buffer has sufficient space. The required size can be up to 3x the input size for worst-case UTF-8 expansion.
+  </Warning>
+  
+  **Parameters:**
+  - `input` - Null-terminated UTF-8 encoded string
+  - `output` - Pre-allocated buffer to write converted text
+  
+  **Returns:** Length of converted text in bytes
+  
+  **Example:**
+  ```cpp
+  char output[1024];
+  size_t length = converter.Convert("汉字", output);
+  ```
+</ParamField>
+
+<ParamField path="Convert(const char* input, size_t length, char* output)" type="size_t">
+  Converts text with explicit length and writes to buffer.
+  
+  **Parameters:**
+  - `input` - UTF-8 encoded string
+  - `length` - Maximum length in bytes to convert
+  - `output` - Pre-allocated buffer to write converted text
+  
+  **Returns:** Length of converted text in bytes
+  
+  **Example:**
+  ```cpp
+  const char* input = "繁体字转换";
+  char output[1024];
+  size_t length = converter.Convert(input, strlen(input), output);
+  ```
+</ParamField>
+
+### Complete C++ Example
+
+```cpp
+#include <iostream>
+#include <opencc/SimpleConverter.hpp>
+
+int main() {
+  try {
+    // Create converter for Simplified to Traditional Chinese
+    opencc::SimpleConverter converter("s2t.json");
+    
+    // Convert text
+    std::string simplified = "开放中文转换";
+    std::string traditional = converter.Convert(simplified);
+    
+    std::cout << "Input: " << simplified << std::endl;
+    std::cout << "Output: " << traditional << std::endl;
+    
+    // Using buffer conversion for performance
+    char output[1024];
+    size_t length = converter.Convert("汉字转换", output);
+    std::cout << "Converted " << length << " bytes" << std::endl;
+    
+  } catch (const std::exception& e) {
+    std::cerr << "Error: " << e.what() << std::endl;
+    return 1;
+  }
+  
+  return 0;
+}
+```
+
+## C API
+
+The C API provides a simple interface for use in C programs or FFI bindings.
+
+### Header
+
+```c
+#include <opencc.h>
+```
+
+### Types
+
+<ResponseField name="opencc_t" type="void*">
+  Opaque handle to an OpenCC converter instance.
+</ResponseField>
+
+### Constants
+
+```c
+#define OPENCC_DEFAULT_CONFIG_SIMP_TO_TRAD "s2t.json"
+#define OPENCC_DEFAULT_CONFIG_TRAD_TO_SIMP "t2s.json"
+```
+
+### Functions
+
+<ParamField path="opencc_open(const char* configFileName)" type="opencc_t">
+  Creates a new OpenCC converter instance.
+  
+  **Parameters:**
+  - `configFileName` - Path to configuration file. Pass `NULL` to use default (s2t.json)
+  
+  **Returns:** Converter handle, or `(opencc_t) -1` on error
+  
+  **Example:**
+  ```c
+  opencc_t converter = opencc_open("s2t.json");
+  if (converter == (opencc_t) -1) {
+    fprintf(stderr, "Error: %s\n", opencc_error());
+    return 1;
+  }
+  ```
+</ParamField>
+
+<ParamField path="opencc_close(opencc_t opencc)" type="int">
+  Destroys a converter instance and frees resources.
+  
+  **Parameters:**
+  - `opencc` - Converter handle
+  
+  **Returns:** 0 on success, non-zero on failure
+  
+  **Example:**
+  ```c
+  opencc_close(converter);
+  ```
+</ParamField>
+
+<ParamField path="opencc_convert_utf8(opencc_t opencc, const char* input, size_t length)" type="char*">
+  Converts UTF-8 text and returns newly allocated string.
+  
+  <Warning>
+    You MUST call `opencc_convert_utf8_free()` to release the returned string.
+  </Warning>
+  
+  **Parameters:**
+  - `opencc` - Converter handle
+  - `input` - UTF-8 encoded string
+  - `length` - Maximum length to convert. Use `(size_t) -1` for entire null-terminated string
+  
+  **Returns:** Newly allocated converted string, or `NULL` on error
+  
+  **Example:**
+  ```c
+  char* result = opencc_convert_utf8(converter, "汉字", (size_t) -1);
+  if (result) {
+    printf("%s\n", result);
+    opencc_convert_utf8_free(result);
+  }
+  ```
+</ParamField>
+
+<ParamField path="opencc_convert_utf8_free(char* str)" type="void">
+  Frees memory allocated by `opencc_convert_utf8()`.
+  
+  **Parameters:**
+  - `str` - Pointer returned by `opencc_convert_utf8()`
+  
+  **Example:**
+  ```c
+  opencc_convert_utf8_free(result);
+  ```
+</ParamField>
+
+<ParamField path="opencc_convert_utf8_to_buffer(opencc_t opencc, const char* input, size_t length, char* output)" type="size_t">
+  Converts text and writes to a pre-allocated buffer.
+  
+  **Parameters:**
+  - `opencc` - Converter handle
+  - `input` - UTF-8 encoded string
+  - `length` - Maximum length to convert. Use `(size_t) -1` for entire string
+  - `output` - Pre-allocated buffer with sufficient space
+  
+  **Returns:** Length of converted string, or `(size_t) -1` on error
+  
+  **Example:**
+  ```c
+  char output[1024];
+  size_t len = opencc_convert_utf8_to_buffer(converter, "简体", (size_t) -1, output);
+  if (len != (size_t) -1) {
+    printf("Converted: %s\n", output);
+  }
+  ```
+</ParamField>
+
+<ParamField path="opencc_error()" type="const char*">
+  Returns the last error message.
+  
+  <Warning>
+    This function is NOT thread-safe. All other OpenCC functions are thread-safe.
+  </Warning>
+  
+  **Returns:** Error message string
+  
+  **Example:**
+  ```c
+  if (converter == (opencc_t) -1) {
+    fprintf(stderr, "Error: %s\n", opencc_error());
+  }
+  ```
+</ParamField>
+
+### Complete C Example
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <opencc.h>
+
+int main() {
+  // Open converter
+  opencc_t converter = opencc_open("s2t.json");
+  if (converter == (opencc_t) -1) {
+    fprintf(stderr, "Failed to open OpenCC: %s\n", opencc_error());
+    return 1;
+  }
+  
+  // Method 1: Convert with automatic allocation
+  const char* input = "开放中文转换";
+  char* converted = opencc_convert_utf8(converter, input, (size_t) -1);
+  if (converted) {
+    printf("Converted: %s\n", converted);
+    opencc_convert_utf8_free(converted);
+  } else {
+    fprintf(stderr, "Conversion failed: %s\n", opencc_error());
+  }
+  
+  // Method 2: Convert to buffer
+  char output[1024];
+  size_t length = opencc_convert_utf8_to_buffer(
+    converter, "汉字转换", (size_t) -1, output
+  );
+  if (length != (size_t) -1) {
+    printf("Converted %zu bytes: %s\n", length, output);
+  }
+  
+  // Clean up
+  opencc_close(converter);
+  return 0;
+}
+```
+
+## Windows Unicode Support
+
+On Windows with MSVC, OpenCC provides a wide-character version of `opencc_open`:
+
+```c
+#ifdef _MSC_VER
+opencc_t opencc_open_w(const wchar_t* configFileName);
+#endif
+```
+
+**Example:**
+```c
+#ifdef _MSC_VER
+opencc_t converter = opencc_open_w(L"s2t.json");
+#else
+opencc_t converter = opencc_open("s2t.json");
+#endif
+```
+
+## Build Integration
+
+### CMake
+
+```cmake
+find_package(OpenCC REQUIRED)
+
+add_executable(myapp main.cpp)
+target_link_libraries(myapp OpenCC::OpenCC)
+```
+
+### pkg-config
+
+```bash
+# Get compiler flags
+pkg-config --cflags opencc
+
+# Get linker flags
+pkg-config --libs opencc
+
+# Compile
+g++ main.cpp $(pkg-config --cflags --libs opencc) -o myapp
+```
+
+### Manual Compilation
+
+```bash
+# C++
+g++ -std=c++17 main.cpp -lopencc -o myapp
+
+# C
+gcc main.c -lopencc -o myapp
+```
+
+## Thread Safety
+
+<Note>
+  All OpenCC functions are thread-safe EXCEPT `opencc_error()`. You can safely use the same converter instance across multiple threads.
+</Note>
+
+**Multi-threaded Example:**
+
+```cpp
+#include <thread>
+#include <opencc/SimpleConverter.hpp>
+
+void convert_in_thread(const opencc::SimpleConverter& converter) {
+  std::string result = converter.Convert("并发转换");
+  // Use result...
+}
+
+int main() {
+  opencc::SimpleConverter converter("s2t.json");
+  
+  // Use same converter in multiple threads
+  std::thread t1(convert_in_thread, std::ref(converter));
+  std::thread t2(convert_in_thread, std::ref(converter));
+  
+  t1.join();
+  t2.join();
+  
+  return 0;
+}
+```
+
+## Memory Management
+
+### C++ API
+
+The `SimpleConverter` class uses RAII. Resources are automatically freed when the object is destroyed.
+
+```cpp
+{
+  opencc::SimpleConverter converter("s2t.json");
+  // Use converter...
+} // Automatically cleaned up
+```
+
+### C API
+
+<Warning>
+  Always pair `opencc_open()` with `opencc_close()` and `opencc_convert_utf8()` with `opencc_convert_utf8_free()`.
+</Warning>
+
+```c
+// Correct usage
+opencc_t converter = opencc_open("s2t.json");
+char* result = opencc_convert_utf8(converter, input, -1);
+opencc_convert_utf8_free(result);
+opencc_close(converter);
+
+// Memory leak - DON'T DO THIS
+result = opencc_convert_utf8(converter, input, -1);
+// Missing: opencc_convert_utf8_free(result);
+```
+
+## Error Handling
+
+### C++ API
+
+The C++ API throws exceptions derived from `std::exception`:
+
+```cpp
+try {
+  opencc::SimpleConverter converter("/invalid/path.json");
+} catch (const std::exception& e) {
+  std::cerr << "Error: " << e.what() << std::endl;
+  // Handle error...
+}
+```
+
+### C API
+
+Check return values and use `opencc_error()` for error messages:
+
+```c
+opencc_t converter = opencc_open("config.json");
+if (converter == (opencc_t) -1) {
+  fprintf(stderr, "Error: %s\n", opencc_error());
+  return 1;
+}
+
+char* result = opencc_convert_utf8(converter, input, -1);
+if (!result) {
+  fprintf(stderr, "Conversion failed: %s\n", opencc_error());
+  opencc_close(converter);
+  return 1;
+}
+```
+
+## Performance Tips
+
+1. **Reuse converter instances** - Creating a converter is expensive. Reuse the same instance for multiple conversions.
+
+2. **Use buffer conversion** - For performance-critical code, use buffer-based conversion to avoid allocations:
+   ```cpp
+   char output[4096];
+   size_t len = converter.Convert(input, strlen(input), output);
+   ```
+
+3. **Batch processing** - Process multiple texts with the same converter instance.
+
+4. **Thread pool** - Share converter instances across a thread pool rather than creating per-thread instances.
+
+## Environment Variables
+
+The `OPENCC_DATA_DIR` environment variable can be used to specify an alternative location for configuration and dictionary files:
+
+```bash
+export OPENCC_DATA_DIR=/custom/opencc/data
+./myapp
+```
+
+## See Also
+
+- [Python API](/sdk/python) - Python bindings
+- [Node.js API](/sdk/nodejs) - Node.js bindings  
+- [Command Line Tools](/sdk/cli) - CLI utilities
+- [Configuration](/advanced/configurations) - Configuration file format

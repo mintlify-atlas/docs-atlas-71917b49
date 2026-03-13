@@ -1,0 +1,382 @@
+---
+title: 'Migration Guide'
+description: 'Upgrade between OpenCC versions and migrate to new dictionary formats'
+---
+
+<Info>
+This guide helps you migrate between major versions of OpenCC and adapt to dictionary format changes.
+</Info>
+
+## Dictionary Format Migration
+
+### Migrating from .ocd to .ocd2
+
+OpenCC 1.1.0 introduced a new dictionary format `.ocd2` based on Marisa Trie, which significantly reduces dictionary size and improves loading performance.
+
+<Steps>
+<Step title="Understand the format differences">
+
+**Legacy .ocd format:**
+- File header: `OPENCCDARTS1`
+- Based on Darts double-array trie
+- Used with `ENABLE_DARTS` compilation flag
+- Example: `STPhrases.ocd` was 4.3MB
+
+**Modern .ocd2 format:**
+- File header: `OPENCC_MARISA_0.2.5`
+- Based on marisa-trie library
+- Default format since version 1.1.0
+- Example: `STPhrases.ocd2` is only 924KB (78% reduction)
+
+</Step>
+
+<Step title="Convert dictionaries using opencc_dict">
+
+The `opencc_dict` command-line tool supports conversion between text and binary formats:
+
+```bash
+# Convert text dictionary to .ocd2 format
+opencc_dict -i dictionary.txt -o dictionary.ocd2
+
+# Convert .ocd2 back to text for editing
+opencc_dict -i dictionary.ocd2 -o dictionary.txt -r
+```
+
+</Step>
+
+<Step title="Update configuration files">
+
+Update your custom configuration JSON files to reference the new `.ocd2` files instead of `.ocd`:
+
+```json
+{
+  "name": "Custom Conversion",
+  "segmentation": {
+    "type": "mmseg",
+    "dict": {
+      "type": "ocd2",
+      "file": "dictionary.ocd2"
+    }
+  },
+  "conversion_chain": [
+    {
+      "dict": {
+        "type": "ocd2",
+        "file": "phrases.ocd2"
+      }
+    }
+  ]
+}
+```
+
+</Step>
+</Steps>
+
+## Version Migration
+
+### Upgrading to Version 1.2.0
+
+**Released:** January 22, 2026
+
+<AccordionGroup>
+<Accordion title="Breaking Changes">
+
+- **Build system updates**: Now requires C++17 compiler
+- **Python version**: Python 2 support completely removed. Python 3.12+ required
+- **Node.js**: Windows x86 and Node 18 support removed
+- **Bazel**: Updated to Bazel 8.5.1
+
+</Accordion>
+
+<Accordion title="Dictionary Changes">
+
+- New dictionary comment syntax in `.txt` files
+- `TWPhrasesRev.txt` now maintained in repository with consistency tests
+- Improved medical terminology and brand name translations
+- Fixed multiple `tw2sp`/`s2twp` configuration errors
+
+</Accordion>
+
+<Accordion title="Test Format Change">
+
+Test cases migrated from text format to JSON format:
+
+**Old format** (text-based):
+```
+test_case_id|input|expected_output
+```
+
+**New format** (`test/testcases/testcases.json`):
+```json
+{
+  "cases": [
+    {
+      "id": "case_050",
+      "input": "測試文字",
+      "expected": {
+        "s2t": "測試文字",
+        "s2tw": "測試文字"
+      }
+    }
+  ]
+}
+```
+
+</Accordion>
+</AccordionGroup>
+
+### Upgrading to Version 1.1.0
+
+**Released:** May 10, 2020
+
+<Warning>
+Version 1.1.0 introduced the `.ocd2` dictionary format. This is a major change affecting all dictionary files.
+</Warning>
+
+<Steps>
+<Step title="Update dictionary format">
+
+All `.ocd` dictionaries must be converted to `.ocd2` format. See [Dictionary Format Migration](#migrating-from-ocd-to-ocd2) above.
+
+</Step>
+
+<Step title="Verify conversions">
+
+Some character conversions changed in this version:
+
+- 涌/湧 default conversion updated
+- Multiple phrase conversions corrected
+
+Test your custom configurations to ensure expected behavior.
+
+</Step>
+
+<Step title="Update dependencies">
+
+- rapidjson upgraded to 1.1.0
+- tclap upgraded to 1.2.2
+- googletest upgraded to 1.11.0
+
+</Step>
+</Steps>
+
+### Upgrading from 0.x to 1.x
+
+**Version 1.0.1 released:** October 18, 2014
+
+<Warning>
+Version 1.0 was a complete rewrite of OpenCC using C++11. This is a major breaking change.
+</Warning>
+
+<AccordionGroup>
+<Accordion title="Core Library Changes">
+
+- **Complete C++11 rewrite**: Entire codebase rewritten with modern C++
+- **API changes**: Many API functions have changed signatures
+- **ABI compatibility**: Binary interface is not compatible with 0.x
+- **SOVERSION**: Updated to 1.1 for dynamic linking
+
+</Accordion>
+
+<Accordion title="Dictionary Improvements">
+
+- Fixed numerous conversion errors accumulated from 0.x versions
+- Added Hong Kong Traditional Chinese support
+- Improved handling of variant characters
+- Better phrase-level conversion accuracy
+
+</Accordion>
+
+<Accordion title="Configuration Format">
+
+Configuration file format remains JSON-based but with updated structure:
+
+```json
+{
+  "name": "Simplified to Traditional",
+  "segmentation": {
+    "type": "mmseg",
+    "dict": {
+      "type": "ocd",
+      "file": "dictionary.ocd"
+    }
+  },
+  "conversion_chain": [
+    {
+      "dict": {
+        "type": "ocd",
+        "file": "STPhrases.ocd"
+      }
+    },
+    {
+      "dict": {
+        "type": "ocd",
+        "file": "STCharacters.ocd"
+      }
+    }
+  ]
+}
+```
+
+</Accordion>
+
+<Accordion title="Build System">
+
+- Switched from Autotools to CMake
+- Better cross-platform build support
+- Visual Studio compilation fixes
+- Removed iconv dependency
+
+</Accordion>
+</AccordionGroup>
+
+## Platform-Specific Considerations
+
+### Windows
+
+<Steps>
+<Step title="Visual C++ compatibility">
+
+OpenCC 1.1+ requires Visual C++ 2015 or later for Windows builds.
+
+</Step>
+
+<Step title="Prebuilt binaries">
+
+Precompiled Windows binaries are available from AppVeyor:
+- [Windows x64](https://ci.appveyor.com/api/projects/Carbo/opencc/artifacts/OpenCC.zip?branch=master&job=Environment:%20nodejs_version=none;%20Platform:%20x64)
+- Windows x86 support removed in version 1.2.0
+
+</Step>
+
+<Step title="Configuration path">
+
+Set the `OPENCC_DATA_DIR` environment variable to specify custom configuration paths:
+
+```cmd
+set OPENCC_DATA_DIR=C:\path\to\config
+opencc -c s2t.json
+```
+
+</Step>
+</Steps>
+
+### macOS
+
+<Note>
+Apple Silicon (ARM64) is officially supported since version 1.1.5.
+</Note>
+
+```bash
+# Install via Homebrew
+brew install opencc
+
+# Verify installation
+opencc --version
+```
+
+### Linux
+
+Most Linux distributions provide OpenCC packages:
+
+```bash
+# Debian/Ubuntu
+sudo apt install opencc
+
+# Fedora
+sudo dnf install opencc
+
+# Arch Linux
+sudo pacman -S opencc
+```
+
+## Custom Configurations
+
+### Updating Configuration Paths
+
+If you maintain custom configuration files, ensure they reference the correct dictionary locations:
+
+```bash
+# Set custom configuration directory
+export OPENCC_DATA_DIR=/path/to/your/config
+
+# Use custom configuration
+opencc -c my_custom.json -i input.txt -o output.txt
+```
+
+### Testing Custom Conversions
+
+After migration, verify your custom conversions work correctly:
+
+```bash
+# Test with Bazel
+bazel test --test_output=all //test/...
+
+# Test with CMake
+make test
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title="Dictionary loading errors">
+
+If you encounter "Cannot load dictionary" errors:
+
+1. Verify dictionary format matches configuration (`.ocd` vs `.ocd2`)
+2. Check file paths are correct and files exist
+3. Ensure `OPENCC_DATA_DIR` is set correctly if using custom paths
+4. Verify file permissions allow reading
+
+</Accordion>
+
+<Accordion title="Conversion results differ from previous version">
+
+Dictionary contents are updated in each release:
+
+1. Check the [Changelog](/resources/changelog) for dictionary updates
+2. Review the `NEWS.md` file for specific character/phrase changes
+3. Add custom dictionary entries if needed to override defaults
+4. Report issues on [GitHub](https://github.com/BYVoid/OpenCC/issues) if conversions are incorrect
+
+</Accordion>
+
+<Accordion title="Build errors after upgrading">
+
+Common build issues:
+
+1. **C++ version**: Ensure compiler supports required C++ standard (C++17 for 1.2+, C++11 for 1.0+)
+2. **Dependencies**: Update system packages for marisa-trie, rapidjson
+3. **CMake version**: Use CMake 3.10 or higher
+4. **Bazel version**: Use version specified in `.bazelversion` file
+
+</Accordion>
+
+<Accordion title="Python/Node.js bindings not working">
+
+Language binding compatibility:
+
+- **Python**: Version 3.12+ required for OpenCC 1.2.0+
+- **Node.js**: Node 20+ recommended, Node 18 removed in 1.2.0
+- Reinstall bindings after upgrading core library:
+
+```bash
+# Python
+pip uninstall opencc
+pip install opencc
+
+# Node.js
+npm uninstall opencc
+npm install opencc
+```
+
+</Accordion>
+</AccordionGroup>
+
+## Need Help?
+
+If you encounter migration issues:
+
+- Check [GitHub Issues](https://github.com/BYVoid/OpenCC/issues) for similar problems
+- Ask questions in the [Telegram group](https://t.me/open_chinese_convert)
+- Review the [Contributing Guide](/resources/contributing) for development setup

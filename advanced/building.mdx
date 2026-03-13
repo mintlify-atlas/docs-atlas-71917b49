@@ -1,0 +1,778 @@
+---
+title: Building from Source
+description: Comprehensive guide to building OpenCC from source with CMake and Bazel, including dependencies, options, and platform-specific instructions
+---
+
+Building OpenCC from source gives you full control over features, optimizations, and custom configurations. OpenCC supports two build systems: **CMake** (primary) and **Bazel** (alternative).
+
+## Prerequisites
+
+### Compiler Requirements
+
+<Tabs>
+  <Tab title="Linux">
+    **GCC 4.6+ or Clang 3.2+**
+    
+    ```bash
+    # Ubuntu/Debian
+    sudo apt-get update
+    sudo apt-get install build-essential cmake git
+    
+    # Fedora/RHEL
+    sudo dnf install gcc gcc-c++ cmake git
+    
+    # Arch Linux
+    sudo pacman -S base-devel cmake git
+    ```
+  </Tab>
+  
+  <Tab title="macOS">
+    **Xcode Command Line Tools or Clang 3.2+**
+    
+    ```bash
+    # Install Xcode Command Line Tools
+    xcode-select --install
+    
+    # Install CMake via Homebrew
+    brew install cmake
+    ```
+    
+    <Note>
+    macOS builds require C++17 standard library support.
+    </Note>
+  </Tab>
+  
+  <Tab title="Windows">
+    **Visual Studio 2015 or later**
+    
+    - Download and install [Visual Studio](https://visualstudio.microsoft.com/)
+    - Install "Desktop development with C++" workload
+    - Install [CMake for Windows](https://cmake.org/download/)
+    - Install [Git for Windows](https://git-scm.com/download/win)
+  </Tab>
+</Tabs>
+
+### Required Tools
+
+| Tool | Minimum Version | Purpose |
+|------|----------------|----------|
+| CMake | 3.5+ | Build configuration |
+| Git | Any | Source code management |
+| C++ Compiler | C++17 support | Compilation |
+
+## Source Code
+
+### Clone Repository
+
+```bash
+git clone https://github.com/BYVoid/OpenCC.git
+cd OpenCC
+```
+
+### Repository Structure
+
+```
+OpenCC/
+├── src/              # Core C++ library source
+├── data/             # Configuration and dictionary files
+│   ├── config/       # Preset JSON configurations
+│   └── dictionary/   # Text dictionary sources
+├── deps/             # Bundled third-party dependencies
+├── test/             # Unit tests
+├── python/           # Python bindings
+├── node/             # Node.js bindings
+├── CMakeLists.txt    # CMake build configuration
+└── BUILD.bazel       # Bazel build configuration
+```
+
+## Building with CMake
+
+CMake is the primary build system for OpenCC, supporting all platforms and configurations.
+
+### Quick Build (Linux/macOS)
+
+```bash
+make
+```
+
+This convenience target runs CMake configuration and build automatically.
+
+### Manual Build Process
+
+<Steps>
+  <Step title="Configure build">
+    ```bash
+    mkdir build
+    cd build
+    cmake ..
+    ```
+  </Step>
+  
+  <Step title="Compile">
+    ```bash
+    make -j$(nproc)  # Linux
+    make -j$(sysctl -n hw.ncpu)  # macOS
+    ```
+  </Step>
+  
+  <Step title="Install (optional)">
+    ```bash
+    sudo make install
+    ```
+  </Step>
+</Steps>
+
+### CMake Build Options
+
+Customize your build with CMake options:
+
+```bash
+cmake .. \
+  -DBUILD_SHARED_LIBS=ON \
+  -DENABLE_GTEST=ON \
+  -DCMAKE_BUILD_TYPE=Release
+```
+
+#### Core Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `BUILD_SHARED_LIBS` | `ON` | Build shared library instead of static |
+| `CMAKE_BUILD_TYPE` | `Release` | Build type: `Release`, `Debug`, `RelWithDebInfo` |
+| `CMAKE_INSTALL_PREFIX` | `/usr/local` | Installation directory |
+
+#### Feature Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `ENABLE_GTEST` | `OFF` | Build unit tests with Google Test |
+| `ENABLE_BENCHMARK` | `OFF` | Build benchmark tests |
+| `ENABLE_DARTS` | `ON` | Build Darts dictionary support (`.ocd` format) |
+| `BUILD_PYTHON` | `OFF` | Build Python bindings |
+| `BUILD_DOCUMENTATION` | `OFF` | Generate API documentation with Doxygen |
+
+#### Dependency Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `USE_SYSTEM_MARISA` | `OFF` | Use system MARISA library instead of bundled |
+| `USE_SYSTEM_RAPIDJSON` | `OFF` | Use system RapidJSON instead of bundled |
+| `USE_SYSTEM_GTEST` | `OFF` | Use system GoogleTest instead of bundled |
+| `USE_SYSTEM_GOOGLE_BENCHMARK` | `OFF` | Use system benchmark library |
+| `USE_SYSTEM_DARTS` | `OFF` | Use system Darts library |
+| `USE_SYSTEM_TCLAP` | `OFF` | Use system TCLAP library |
+| `USE_SYSTEM_PYBIND11` | `OFF` | Use system pybind11 |
+
+<Warning>
+Using system dependencies requires those libraries to be installed on your system. If not found, the build will fail. Bundled dependencies are recommended for most users.
+</Warning>
+
+### Platform-Specific Builds
+
+<Tabs>
+  <Tab title="Linux">
+    **Standard build:**
+    
+    ```bash
+    mkdir build && cd build
+    cmake .. \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_PREFIX=/usr/local
+    make -j$(nproc)
+    sudo make install
+    ```
+    
+    **System integration:**
+    
+    ```bash
+    # Update library cache
+    sudo ldconfig
+    
+    # Verify installation
+    opencc --version
+    pkg-config --modversion opencc
+    ```
+  </Tab>
+  
+  <Tab title="macOS">
+    **Standard build:**
+    
+    ```bash
+    mkdir build && cd build
+    cmake .. \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_PREFIX=/usr/local \
+      -DCMAKE_CXX_STANDARD=17
+    make -j$(sysctl -n hw.ncpu)
+    sudo make install
+    ```
+    
+    **Homebrew-compatible build:**
+    
+    ```bash
+    cmake .. \
+      -DCMAKE_INSTALL_PREFIX=/opt/homebrew \
+      -DCMAKE_MACOSX_RPATH=ON
+    make
+    sudo make install
+    ```
+    
+    <Note>
+    macOS builds automatically set `CMAKE_MACOSX_RPATH=1` and require C++17 standard.
+    </Note>
+  </Tab>
+  
+  <Tab title="Windows">
+    **Visual Studio build:**
+    
+    ```powershell
+    # Configure with Visual Studio generator
+    mkdir build
+    cd build
+    cmake .. -G "Visual Studio 16 2019" -A x64
+    
+    # Build
+    cmake --build . --config Release
+    
+    # Install
+    cmake --install . --prefix "C:\Program Files\OpenCC"
+    ```
+    
+    **Alternative: Use build.cmd**
+    
+    ```cmd
+    build.cmd
+    ```
+    
+    This script automates the CMake configuration and Visual Studio build process.
+  </Tab>
+</Tabs>
+
+### Custom Installation Paths
+
+Control where files are installed:
+
+```bash
+cmake .. \
+  -DCMAKE_INSTALL_PREFIX=/opt/opencc \
+  -DSHARE_INSTALL_PREFIX=/opt/opencc/share \
+  -DINCLUDE_INSTALL_DIR=/opt/opencc/include \
+  -DLIB_INSTALL_DIR=/opt/opencc/lib
+```
+
+Installation structure:
+
+```
+${CMAKE_INSTALL_PREFIX}/
+├── bin/
+│   ├── opencc
+│   ├── opencc_dict
+│   └── opencc_phrase_extract
+├── lib/
+│   ├── libopencc.so (or .dylib/.dll)
+│   ├── pkgconfig/
+│   │   └── opencc.pc
+│   └── cmake/
+│       └── opencc/
+├── include/
+│   └── opencc/
+└── share/
+    └── opencc/
+        ├── *.json (configurations)
+        └── *.ocd2 (dictionaries)
+```
+
+## Building with Bazel
+
+Bazel provides hermetic, reproducible builds across platforms.
+
+### Install Bazel
+
+<Tabs>
+  <Tab title="Linux">
+    ```bash
+    # Using Bazelisk (recommended)
+    npm install -g @bazel/bazelisk
+    
+    # Or download from GitHub
+    wget https://github.com/bazelbuild/bazel/releases/download/6.0.0/bazel-6.0.0-linux-x86_64
+    chmod +x bazel-6.0.0-linux-x86_64
+    sudo mv bazel-6.0.0-linux-x86_64 /usr/local/bin/bazel
+    ```
+  </Tab>
+  
+  <Tab title="macOS">
+    ```bash
+    brew install bazelisk
+    ```
+  </Tab>
+  
+  <Tab title="Windows">
+    ```powershell
+    choco install bazelisk
+    ```
+  </Tab>
+</Tabs>
+
+### Build OpenCC Library
+
+```bash
+bazel build //:opencc
+```
+
+### Build Command-Line Tools
+
+```bash
+# Build main converter tool
+bazel build //src/tools:command_line
+
+# Build dictionary converter
+bazel build //src/tools:dict_converter
+
+# Build phrase extraction tool
+bazel build //src/tools:phrase_extract
+```
+
+### Build Targets
+
+Common Bazel targets:
+
+| Target | Description |
+|--------|-------------|
+| `//:opencc` | Main library target |
+| `//src:opencc` | Core library implementation |
+| `//src/tools:command_line` | `opencc` CLI tool |
+| `//src/tools:dict_converter` | `opencc_dict` tool |
+| `//src/tools:phrase_extract` | `opencc_phrase_extract` tool |
+| `//data/config` | Configuration files |
+| `//data/dictionary:binary_dictionaries` | Compiled `.ocd2` dictionaries |
+
+### Bazel Build Options
+
+```bash
+# Optimized build
+bazel build -c opt //:opencc
+
+# Debug build
+bazel build -c dbg //:opencc
+
+# Build with specific C++ standard
+bazel build --cxxopt='-std=c++17' //:opencc
+
+# Cross-compilation (example: Linux to macOS)
+bazel build --platforms=@io_bazel_rules_go//go/toolchain:darwin_amd64 //:opencc
+```
+
+### Bazel Integration
+
+Use OpenCC in your own Bazel project:
+
+**WORKSPACE:**
+
+```python
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "opencc",
+    urls = ["https://github.com/BYVoid/OpenCC/archive/refs/tags/ver.1.2.0.tar.gz"],
+    strip_prefix = "OpenCC-ver.1.2.0",
+    sha256 = "...",
+)
+```
+
+**BUILD:**
+
+```python
+cc_binary(
+    name = "my_app",
+    srcs = ["main.cpp"],
+    deps = ["@opencc//:opencc"],
+)
+```
+
+See the [full Bazel example](https://github.com/BYVoid/opencc-bazel-example).
+
+## Dependencies
+
+OpenCC has several third-party dependencies, all bundled in the repository.
+
+### Core Dependencies
+
+<AccordionGroup>
+  <Accordion title="MARISA Trie (Required)">
+    **Version:** 0.2.6  
+    **Purpose:** High-performance trie structure for `.ocd2` dictionaries  
+    **Location:** `deps/marisa-0.2.6/`
+    
+    MARISA provides the fast prefix matching and compact storage used by default in OpenCC.
+  </Accordion>
+
+  <Accordion title="RapidJSON (Required)">
+    **Purpose:** JSON configuration file parsing  
+    **Location:** Bundled header-only library
+    
+    Used to parse `.json` configuration files.
+  </Accordion>
+
+  <Accordion title="TCLAP (Required for CLI)">
+    **Purpose:** Command-line argument parsing  
+    **Location:** Bundled header-only library
+    
+    Used by `opencc`, `opencc_dict`, and `opencc_phrase_extract` tools.
+  </Accordion>
+
+  <Accordion title="Darts Clone (Optional)">
+    **Purpose:** Double-array trie for legacy `.ocd` format  
+    **Control:** `ENABLE_DARTS=ON` (default)
+    
+    Required only if you need to read or write legacy `.ocd` dictionaries.
+  </Accordion>
+</AccordionGroup>
+
+### Test Dependencies
+
+<AccordionGroup>
+  <Accordion title="Google Test">
+    **Version:** 1.15.0  
+    **Location:** `deps/googletest-1.15.0/`  
+    **Enable:** `ENABLE_GTEST=ON`
+    
+    Unit testing framework for C++ tests.
+  </Accordion>
+
+  <Accordion title="Google Benchmark">
+    **Location:** `deps/google-benchmark/`  
+    **Enable:** `ENABLE_BENCHMARK=ON`
+    
+    Performance benchmarking framework.
+  </Accordion>
+</AccordionGroup>
+
+### Python Dependencies
+
+<Accordion title="pybind11">
+  **Version:** 2.13.1  
+  **Location:** `deps/pybind11-2.13.1/`  
+  **Enable:** `BUILD_PYTHON=ON`
+  
+  Python binding generation library.
+</Accordion>
+
+<Tip>
+All dependencies are bundled in the `deps/` directory. You don't need to install them separately unless you explicitly use `USE_SYSTEM_*` options.
+</Tip>
+
+## Running Tests
+
+OpenCC includes comprehensive unit tests to verify correctness.
+
+### CMake Testing
+
+<Steps>
+  <Step title="Enable tests during configuration">
+    ```bash
+    cmake .. -DENABLE_GTEST=ON
+    ```
+  </Step>
+  
+  <Step title="Build test suite">
+    ```bash
+    make -j$(nproc)
+    ```
+  </Step>
+  
+  <Step title="Run tests">
+    ```bash
+    make test
+    # Or use ctest directly
+    ctest --output-on-failure
+    ```
+  </Step>
+</Steps>
+
+**Detailed test output:**
+
+```bash
+ctest --verbose
+```
+
+**Run specific tests:**
+
+```bash
+ctest -R DictTest  # Run only dictionary tests
+ctest -R ConfigTest  # Run only configuration tests
+```
+
+### Bazel Testing
+
+```bash
+# Run all tests
+bazel test //...
+
+# Run specific test
+bazel test //src:config_test
+
+# Run with verbose output
+bazel test //... --test_output=all
+```
+
+### Test Structure
+
+Test files are located in:
+
+- `src/*Test.cpp` - Unit tests for core modules
+- `test/` - Integration and configuration tests
+- `data/config/ConfigDictValidationTest.cpp` - Configuration validation
+- `data/dictionary/DictionaryTest.cpp` - Dictionary validation
+
+## Benchmarking
+
+Measure OpenCC performance with benchmark tests.
+
+### Enable Benchmarks
+
+```bash
+cmake .. -DENABLE_BENCHMARK=ON
+make -j$(nproc)
+```
+
+### Run Benchmarks
+
+```bash
+# Run all benchmarks
+make test
+
+# Or run benchmark binaries directly
+./build/src/BenchmarkConversion
+```
+
+**Sample output:**
+
+```
+-------------------------------------------------------------------
+Benchmark                         Time             CPU   Iterations
+-------------------------------------------------------------------
+BM_ConvertSimplifiedToTraditional  1250 ns         1248 ns       560000
+BM_ConvertTraditionalToSimplified  980 ns          979 ns        715000
+```
+
+## Cross-Compilation
+
+### Cross-Compile for ARM (Linux)
+
+```bash
+sudo apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+
+mkdir build-arm64 && cd build-arm64
+cmake .. \
+  -DCMAKE_SYSTEM_NAME=Linux \
+  -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
+  -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
+  -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ \
+  -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER \
+  -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
+  -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
+make -j$(nproc)
+```
+
+### Cross-Compile for Windows (from Linux)
+
+```bash
+sudo apt-get install mingw-w64
+
+mkdir build-windows && cd build-windows
+cmake .. \
+  -DCMAKE_SYSTEM_NAME=Windows \
+  -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
+  -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ \
+  -DCMAKE_FIND_ROOT_PATH=/usr/x86_64-w64-mingw32 \
+  -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER \
+  -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
+  -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
+make -j$(nproc)
+```
+
+## Static vs. Shared Libraries
+
+### Build Shared Library (Default)
+
+```bash
+cmake .. -DBUILD_SHARED_LIBS=ON
+make
+```
+
+**Output:**
+- Linux: `libopencc.so.1.2.0`
+- macOS: `libopencc.1.2.0.dylib`
+- Windows: `opencc.dll`
+
+### Build Static Library
+
+```bash
+cmake .. -DBUILD_SHARED_LIBS=OFF
+make
+```
+
+**Output:**
+- All platforms: `libopencc.a` (or `.lib` on Windows)
+
+<Note>
+When building static libraries, OpenCC defines `Opencc_BUILT_AS_STATIC` to adjust symbol visibility.
+</Note>
+
+## Building Python Bindings
+
+### CMake Build
+
+```bash
+cmake .. \
+  -DBUILD_PYTHON=ON \
+  -DUSE_SYSTEM_PYBIND11=OFF
+make -j$(nproc)
+```
+
+This builds `opencc_clib` Python extension module.
+
+### Pip Build (Recommended)
+
+Use the Python package build system:
+
+```bash
+cd python/
+pip install -e .
+```
+
+Or install from PyPI:
+
+```bash
+pip install opencc
+```
+
+## Building Node.js Bindings
+
+```bash
+cd node/
+npm install
+npm test
+```
+
+The Node.js module uses `binding.gyp` (node-gyp) for compilation.
+
+## Troubleshooting Build Issues
+
+### CMake Configuration Errors
+
+**Error:** `CMake 3.5 or higher is required`
+
+**Solution:** Update CMake:
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install cmake
+
+# Or download latest from cmake.org
+wget https://github.com/Kitware/CMake/releases/download/v3.27.0/cmake-3.27.0-linux-x86_64.sh
+sudo sh cmake-3.27.0-linux-x86_64.sh --prefix=/usr/local --skip-license
+```
+
+### Compilation Errors
+
+**Error:** `error: 'std::optional' has not been declared`
+
+**Solution:** Ensure C++17 support:
+
+```bash
+cmake .. -DCMAKE_CXX_STANDARD=17
+```
+
+### Linker Errors
+
+**Error:** `undefined reference to 'marisa::Trie::build'`
+
+**Solution:** Ensure MARISA is built:
+
+```bash
+# Clean and rebuild
+rm -rf build
+mkdir build && cd build
+cmake .. -DUSE_SYSTEM_MARISA=OFF
+make clean
+make -j$(nproc)
+```
+
+### Test Failures
+
+**Error:** Tests fail with "Dictionary file not found"
+
+**Solution:** Build dictionaries first:
+
+```bash
+cd build
+make -j$(nproc)
+ctest --output-on-failure
+```
+
+### Installation Permission Errors
+
+**Error:** `Permission denied` during `make install`
+
+**Solution:**
+
+```bash
+# Install to system location with sudo
+sudo make install
+
+# Or install to user directory
+cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/.local
+make install
+```
+
+## Build Performance Tips
+
+<AccordionGroup>
+  <Accordion title="Use parallel builds">
+    ```bash
+    # Linux
+    make -j$(nproc)
+    
+    # macOS
+    make -j$(sysctl -n hw.ncpu)
+    
+    # Windows
+    cmake --build . --config Release -- /m
+    ```
+  </Accordion>
+
+  <Accordion title="Use ccache for faster rebuilds">
+    ```bash
+    sudo apt-get install ccache
+    cmake .. -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+    make -j$(nproc)
+    ```
+  </Accordion>
+
+  <Accordion title="Use Ninja generator">
+    ```bash
+    sudo apt-get install ninja-build
+    cmake .. -G Ninja
+    ninja -j$(nproc)
+    ```
+  </Accordion>
+
+  <Accordion title="Disable unnecessary features">
+    ```bash
+    cmake .. \
+      -DENABLE_GTEST=OFF \
+      -DENABLE_BENCHMARK=OFF \
+      -DENABLE_DARTS=OFF \
+      -DBUILD_DOCUMENTATION=OFF
+    make -j$(nproc)
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## See Also
+
+- [Configuration Files](/advanced/configurations) - Customizing conversion behavior
+- [Custom Dictionaries](/advanced/custom-dictionaries) - Creating custom dictionaries
+- [Contributing Guide](https://github.com/BYVoid/OpenCC/blob/master/CONTRIBUTING.md) - Contributing to OpenCC development

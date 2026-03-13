@@ -1,0 +1,520 @@
+---
+title: Python API
+description: Complete reference for OpenCC Python bindings
+---
+
+The OpenCC Python package provides a Pythonic interface to the OpenCC library for Chinese text conversion.
+
+## Installation
+
+```bash
+pip install opencc-python-reimplemented
+```
+
+Or from source:
+
+```bash
+git clone https://github.com/BYVoid/OpenCC.git
+cd OpenCC
+pip install .
+```
+
+## Quick Start
+
+```python
+import opencc
+
+# Create converter
+converter = opencc.OpenCC('s2t.json')
+
+# Convert text
+result = converter.convert('汉字')
+print(result)  # Output: 漢字
+```
+
+## OpenCC Class
+
+### Constructor
+
+<ParamField path="OpenCC(config='t2s')" type="constructor">
+  Creates a new OpenCC converter instance.
+  
+  **Parameters:**
+  - `config` (str) - Configuration name or path. Default: `'t2s'`
+  
+  **Configuration Shortcuts:**
+  - You can omit the `.json` extension: `'s2t'` is equivalent to `'s2t.json'`
+  - Supports full paths: `'/path/to/custom.json'`
+  - Searches in package data directory automatically
+  
+  **Available Configurations:**
+  - `s2t` - Simplified to Traditional
+  - `t2s` - Traditional to Simplified
+  - `s2tw` - Simplified to Traditional (Taiwan)
+  - `tw2s` - Traditional (Taiwan) to Simplified
+  - `s2hk` - Simplified to Traditional (Hong Kong)
+  - `hk2s` - Traditional (Hong Kong) to Simplified
+  - `s2twp` - Simplified to Traditional (Taiwan with phrases)
+  - `tw2sp` - Traditional (Taiwan) to Simplified (with phrases)
+  - `t2tw` - Traditional to Traditional (Taiwan)
+  - `tw2t` - Traditional (Taiwan) to Traditional
+  - `t2hk` - Traditional to Traditional (Hong Kong)
+  - `hk2t` - Traditional (Hong Kong) to Traditional
+  - `t2jp` - Traditional to Japanese Kanji (Kyujitai)
+  - `jp2t` - Japanese Kanji to Traditional
+  
+  **Example:**
+  ```python
+  # Using shortcut
+  converter = opencc.OpenCC('s2t')
+  
+  # Explicit .json extension
+  converter = opencc.OpenCC('s2t.json')
+  
+  # Custom configuration file
+  converter = opencc.OpenCC('/path/to/custom.json')
+  
+  # Default (Traditional to Simplified)
+  converter = opencc.OpenCC()
+  ```
+  
+  **Raises:**
+  - `RuntimeError` - If configuration file is not found or invalid
+</ParamField>
+
+### Methods
+
+<ParamField path="convert(text)" type="method">
+  Converts text from one Chinese variant to another.
+  
+  **Parameters:**
+  - `text` (str) - UTF-8 text to convert
+  
+  **Returns:** str - Converted text
+  
+  **Example:**
+  ```python
+  converter = opencc.OpenCC('s2t')
+  result = converter.convert('开放中文转换')
+  print(result)  # Output: 開放中文轉換
+  ```
+  
+  **Raises:**
+  - `RuntimeError` - If conversion fails
+</ParamField>
+
+### Attributes
+
+<ResponseField name="config" type="str">
+  The configuration file path used by this converter instance.
+  
+  **Example:**
+  ```python
+  converter = opencc.OpenCC('s2t')
+  print(converter.config)  # Prints resolved path
+  ```
+</ResponseField>
+
+## Module Functions
+
+### CONFIGS
+
+<ResponseField name="CONFIGS" type="list[str]">
+  List of available configuration files in the package.
+  
+  **Example:**
+  ```python
+  import opencc
+  
+  print("Available configurations:")
+  for config in opencc.CONFIGS:
+    print(f"  - {config}")
+  ```
+</ResponseField>
+
+### __version__
+
+<ResponseField name="__version__" type="str">
+  OpenCC library version string.
+  
+  **Example:**
+  ```python
+  import opencc
+  print(f"OpenCC version: {opencc.__version__}")
+  ```
+</ResponseField>
+
+## Complete Examples
+
+### Basic Conversion
+
+```python
+import opencc
+
+# Simplified to Traditional
+converter = opencc.OpenCC('s2t')
+print(converter.convert('汉字'))  # 漢字
+print(converter.convert('中国'))  # 中國
+
+# Traditional to Simplified  
+converter = opencc.OpenCC('t2s')
+print(converter.convert('漢字'))  # 汉字
+print(converter.convert('臺灣'))  # 台湾
+```
+
+### Regional Variants
+
+```python
+import opencc
+
+# Simplified to Taiwan Traditional
+s2tw = opencc.OpenCC('s2tw')
+print(s2tw.convert('鼠标'))  # 滑鼠
+print(s2tw.convert('软件'))  # 軟體
+
+# Simplified to Hong Kong Traditional
+s2hk = opencc.OpenCC('s2hk')
+print(s2hk.convert('数码'))  # 數碼
+print(s2hk.convert('信息'))  # 資訊
+```
+
+### File Conversion
+
+```python
+import opencc
+
+def convert_file(input_path, output_path, config='s2t'):
+    """Convert a text file from one variant to another."""
+    converter = opencc.OpenCC(config)
+    
+    with open(input_path, 'r', encoding='utf-8') as f_in:
+        content = f_in.read()
+    
+    converted = converter.convert(content)
+    
+    with open(output_path, 'w', encoding='utf-8') as f_out:
+        f_out.write(converted)
+
+# Usage
+convert_file('input_simplified.txt', 'output_traditional.txt', 's2t')
+```
+
+### Batch Processing
+
+```python
+import opencc
+
+def batch_convert(texts, config='s2t'):
+    """Convert multiple texts efficiently."""
+    converter = opencc.OpenCC(config)
+    return [converter.convert(text) for text in texts]
+
+# Convert a list of texts
+texts = [
+    '开放中文转换',
+    '简体中文',
+    '繁体中文',
+]
+
+results = batch_convert(texts, 's2t')
+for original, converted in zip(texts, results):
+    print(f"{original} → {converted}")
+```
+
+### Web Application Integration
+
+```python
+from flask import Flask, request, jsonify
+import opencc
+
+app = Flask(__name__)
+
+# Create converters at startup (reuse for performance)
+converters = {
+    's2t': opencc.OpenCC('s2t'),
+    't2s': opencc.OpenCC('t2s'),
+    's2tw': opencc.OpenCC('s2tw'),
+    's2hk': opencc.OpenCC('s2hk'),
+}
+
+@app.route('/convert', methods=['POST'])
+def convert_text():
+    data = request.json
+    text = data.get('text', '')
+    config = data.get('config', 's2t')
+    
+    if config not in converters:
+        return jsonify({'error': 'Invalid config'}), 400
+    
+    try:
+        result = converters[config].convert(text)
+        return jsonify({'result': result})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+if __name__ == '__main__':
+    app.run()
+```
+
+### Command-Line Script
+
+```python
+#!/usr/bin/env python3
+"""Simple CLI tool for text conversion."""
+
+import sys
+import argparse
+import opencc
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Convert Chinese text between variants'
+    )
+    parser.add_argument(
+        'text',
+        nargs='?',
+        help='Text to convert (reads from stdin if omitted)'
+    )
+    parser.add_argument(
+        '-c', '--config',
+        default='s2t',
+        help='Configuration (default: s2t)'
+    )
+    parser.add_argument(
+        '--list-configs',
+        action='store_true',
+        help='List available configurations'
+    )
+    
+    args = parser.parse_args()
+    
+    if args.list_configs:
+        print("Available configurations:")
+        for config in opencc.CONFIGS:
+            print(f"  {config}")
+        return
+    
+    # Get text from argument or stdin
+    text = args.text if args.text else sys.stdin.read()
+    
+    # Convert
+    try:
+        converter = opencc.OpenCC(args.config)
+        result = converter.convert(text)
+        print(result, end='')
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+if __name__ == '__main__':
+    main()
+```
+
+Usage:
+```bash
+# Convert text
+python convert.py "汉字" -c s2t
+
+# Pipe input
+echo "简体中文" | python convert.py -c s2t
+
+# List configurations
+python convert.py --list-configs
+```
+
+### Django Integration
+
+```python
+from django.db import models
+import opencc
+
+class Article(models.Model):
+    title = models.CharField(max_length=200)
+    content = models.TextField()
+    content_traditional = models.TextField(blank=True)
+    
+    def save(self, *args, **kwargs):
+        # Auto-generate traditional version
+        if self.content and not self.content_traditional:
+            converter = opencc.OpenCC('s2t')
+            self.content_traditional = converter.convert(self.content)
+        super().save(*args, **kwargs)
+
+# Usage
+article = Article(
+    title='标题',
+    content='这是简体中文内容'
+)
+article.save()
+print(article.content_traditional)  # Auto-converted
+```
+
+## Error Handling
+
+```python
+import opencc
+
+try:
+    # Invalid configuration
+    converter = opencc.OpenCC('invalid_config')
+except RuntimeError as e:
+    print(f"Failed to create converter: {e}")
+
+try:
+    converter = opencc.OpenCC('s2t')
+    # Conversion errors are rare but possible
+    result = converter.convert(text)
+except RuntimeError as e:
+    print(f"Conversion failed: {e}")
+except Exception as e:
+    print(f"Unexpected error: {e}")
+```
+
+## Performance Considerations
+
+### Reuse Converter Instances
+
+<Warning>
+  Creating a converter is expensive. Always reuse converter instances.
+</Warning>
+
+```python
+# BAD - Creates new converter each time
+def convert_slow(texts):
+    results = []
+    for text in texts:
+        converter = opencc.OpenCC('s2t')  # Slow!
+        results.append(converter.convert(text))
+    return results
+
+# GOOD - Reuse converter
+def convert_fast(texts):
+    converter = opencc.OpenCC('s2t')  # Create once
+    return [converter.convert(text) for text in texts]
+```
+
+### Thread Safety
+
+<Note>
+  OpenCC converters are thread-safe. You can safely share a converter instance across multiple threads.
+</Note>
+
+```python
+import opencc
+from concurrent.futures import ThreadPoolExecutor
+
+# Shared converter
+converter = opencc.OpenCC('s2t')
+
+def convert_text(text):
+    return converter.convert(text)
+
+# Use in thread pool
+texts = ['文本1', '文本2', '文本3']
+with ThreadPoolExecutor(max_workers=4) as executor:
+    results = list(executor.map(convert_text, texts))
+```
+
+### Memory Usage
+
+Each converter loads dictionaries into memory. For applications with multiple configurations:
+
+```python
+# Keep converters as module-level or class-level singletons
+class ConversionService:
+    _converters = {}
+    
+    @classmethod
+    def get_converter(cls, config):
+        if config not in cls._converters:
+            cls._converters[config] = opencc.OpenCC(config)
+        return cls._converters[config]
+    
+    @classmethod
+    def convert(cls, text, config='s2t'):
+        converter = cls.get_converter(config)
+        return converter.convert(text)
+
+# Usage
+result = ConversionService.convert('汉字', 's2t')
+```
+
+## Custom Configurations
+
+You can use custom configuration files:
+
+```python
+import opencc
+
+# Use custom configuration
+converter = opencc.OpenCC('/path/to/custom.json')
+result = converter.convert('文本')
+```
+
+See [Configuration Guide](/advanced/configurations) for details on creating custom configurations.
+
+## Type Hints
+
+For better IDE support and type checking:
+
+```python
+from typing import List
+import opencc
+
+def convert_texts(texts: List[str], config: str = 's2t') -> List[str]:
+    """Convert multiple texts with type hints."""
+    converter: opencc.OpenCC = opencc.OpenCC(config)
+    results: List[str] = []
+    
+    for text in texts:
+        converted: str = converter.convert(text)
+        results.append(converted)
+    
+    return results
+```
+
+## Testing
+
+```python
+import unittest
+import opencc
+
+class TestOpenCC(unittest.TestCase):
+    def setUp(self):
+        self.s2t = opencc.OpenCC('s2t')
+        self.t2s = opencc.OpenCC('t2s')
+    
+    def test_simplified_to_traditional(self):
+        result = self.s2t.convert('汉字')
+        self.assertEqual(result, '漢字')
+    
+    def test_traditional_to_simplified(self):
+        result = self.t2s.convert('漢字')
+        self.assertEqual(result, '汉字')
+    
+    def test_round_trip(self):
+        original = '简体中文'
+        traditional = self.s2t.convert(original)
+        back = self.t2s.convert(traditional)
+        # Note: Round-trip may not be exact due to variant mappings
+        self.assertIsNotNone(back)
+
+if __name__ == '__main__':
+    unittest.main()
+```
+
+## Environment Variables
+
+The Python bindings respect the `OPENCC_DATA_DIR` environment variable:
+
+```bash
+export OPENCC_DATA_DIR=/custom/opencc/data
+python your_script.py
+```
+
+## See Also
+
+- [C/C++ API](/sdk/cpp) - C++ and C API reference
+- [Node.js API](/sdk/nodejs) - Node.js bindings
+- [Command Line Tools](/sdk/cli) - CLI utilities
+- [Configuration](/advanced/configurations) - Configuration file format
